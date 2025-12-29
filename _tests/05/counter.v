@@ -6,19 +6,18 @@
 */
 
 module counter #(parameter WIDTH=32) (
-  output reg [WIDTH-1:0] o_out,
-  input                  i_clk,
-  input	                 i_reset
+  output reg [WIDTH-1:0] out_o,
+  input                  clk_i,
+  input	                 reset_i
 );
 
-  always @(posedge i_clk or posedge i_reset) begin
+  always @(posedge clk_i or posedge reset_i) begin
     // we use an asynchronous reset
-    if (i_reset) begin
-      o_out <= {WIDTH{1'b0}};
+    if (reset_i) begin
+      out_o <= {WIDTH{1'b0}};
     end else begin
-      o_out <= o_out + {{WIDTH-1{1'b0}},1'b1};
+      out_o <= out_o + {{WIDTH-1{1'b0}},1'b1};
     end
   end
 
 endmodule // counter
-

@@ -1,22 +1,13 @@
-# Regression tests
+# IHP-EDA-Tools Regression Tests
 
-| Test No. | Description                                                       |
-| -------- | ------------------------------------------------------------------|
-| 01       | Test of LibreLane with sky130A                                    |
-| 02       | Test of DRC and LVS with sky130A                                  |
-| 03       | Test import of Python packages                                    |
-| 04       | Test of LibreLane with gf180mcuD                                  |
-| 05       | Test of ngspice with SG13G2                                       |
-| 06       | Test of ngspice with sky130A                                      |
-| 07       | Test of LibreLane with sky130A and VHDL                           |
-| 08       | Test of PULP flow                                                 |
-| 09       | Test of RISC-V toolchain                                          |
-| 10       | Test of OpenROAD flow scripts with SG13G2                         |
-| 11       | Test of Xyce with SG13G2                                          |
-| 12       | Test of iVerilog functionality                                    |
-| 13       | Test the <https://www.zerotoasiccourse.com> examples of Matt Venn |
-| 14       | Test of ngspice with gf180mcuD                                    |
-| 15       | Test Chisel with a simple example ALU                             |
-| 16       | Test VACASK with a simple example                                 |
-| 17       | Test of Veryl                                                     |
-| 18       | Test of LibreLane with ihp-sg13g2                                 |
+This is an IHP-focused container. Tests are designed for the IHP SG13G2 PDK only.
+
+| Test No. | Description                                         |
+| -------- | ----------------------------------------------------|
+| 01       | Test import of Python packages                      |
+| 02       | Test of ngspice with ihp-sg13g2                     |
+| 03       | Test of OpenROAD flow scripts with ihp-sg13g2       |
+| 04       | Test of Xyce with ihp-sg13g2                        |
+| 05       | Test of iVerilog functionality                      |
+| 06       | Test VACASK analog simulator                        |
+| 07       | Test of LibreLane with ihp-sg13g2                   |

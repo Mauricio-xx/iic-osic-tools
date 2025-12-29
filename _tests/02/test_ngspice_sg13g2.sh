@@ -11,7 +11,7 @@ fi
 
 ERROR=0
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKDIR=/foss/designs/runs/${RAND}/05
+WORKDIR=/foss/designs/runs/${RAND}/02
 
 mkdir -p "$WORKDIR"
 

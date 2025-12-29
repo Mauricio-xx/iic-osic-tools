@@ -1,6 +1,6 @@
 {
     "DESIGN_NAME": "counter",
-    "VHDL_FILES": "dir::counter.vhdl",
+    "VERILOG_FILES": "dir::counter.v",
     "CLOCK_PORT": "clk_i",
     "CLOCK_PERIOD": 20,
     "PNR_SDC_FILE": "dir::impl.sdc",

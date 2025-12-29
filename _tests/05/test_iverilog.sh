@@ -16,13 +16,14 @@ if ! command -v iverilog >/dev/null 2>&1; then
     exit 1
 fi
 
-TMP=/foss/designs/runs/${RAND}/12
-LOG=/foss/designs/runs/${RAND}/12/test_iverilog.log
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TMP=/foss/designs/runs/${RAND}/05
+LOG=/foss/designs/runs/${RAND}/05/test_iverilog.log
 
 mkdir -p "$TMP"
 
-SRC1="/foss/examples/demo_sky130A/dig/counter.v"
-SRC2="/foss/examples/demo_sky130A/dig/counter_tb.v"
+SRC1="$DIR/counter.v"
+SRC2="$DIR/counter_tb.v"
 
 if [[ ! -f "$SRC1" ]]; then
     echo "[ERROR] Source file $SRC1 not found."
@@ -37,7 +38,7 @@ cp "$SRC1" "$TMP"
 cp "$SRC2" "$TMP"
 cd "$TMP" || { echo "[ERROR] Failed to change directory to $TMP."; exit 1; }
 
-if ! iverilog -o counter_tb.vvp counter_tb.v; then
+if ! iverilog -o counter_tb.vvp counter_tb.v counter.v; then
     echo "[ERROR] Compilation with iVerilog failed."
     exit 1
 fi
