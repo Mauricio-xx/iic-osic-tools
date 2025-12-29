@@ -2,11 +2,22 @@
 
 ## Objetivo
 
-Crear una versión simplificada y especializada del contenedor IIC-OSIC-TOOLS enfocada exclusivamente en el PDK IHP SG13G2, que sirva para:
+Crear una versión especializada del contenedor IIC-OSIC-TOOLS enfocada exclusivamente en el PDK IHP SG13G2, que sirva para:
 
 1. **Diseño de circuitos** - Usuarios finales diseñando con IHP
 2. **Desarrollo del PDK** - Contribuidores mejorando/manteniendo el PDK
 3. **Extensibilidad** - Facilitar integración de nuevas herramientas con el PDK
+
+---
+
+## Decisiones Clave (Definidas)
+
+| Decisión | Elección | Justificación |
+|----------|----------|---------------|
+| **Imagen** | Única | Misma imagen para diseñadores y desarrolladores PDK. Permite compartir test cases |
+| **Flujo Digital** | Siempre incluido | OpenROAD, yosys, ORFS, LibreLane |
+| **Herramientas RF** | Mantener todas | openems, palace, qucs-s, rftoolkit |
+| **Repositorio** | Este fork | Mauricio-xx/iic-osic-tools. Sin PRs al upstream |
 
 ---
 
@@ -66,122 +77,134 @@ ihp-eda-tools/
 
 ## Clasificación de Herramientas
 
-### TIER 1: Core (Siempre incluidas) - ~15 herramientas
-Esenciales para cualquier diseño IHP.
+### INCLUIDAS - Herramientas que se mantienen (~50 herramientas)
 
-**Esquemáticos y Layout:**
+#### Esquemáticos y Layout
 - `xschem` - Editor de esquemáticos
-- `klayout` - Editor de layout
+- `klayout` - Editor de layout con DRC/LVS
 - `magic` - Layout con DRC/PEX integrado
 - `gds3d` - Visualizador 3D
+- `xcircuit` - Editor esquemáticos alternativo
 
-**Simulación Analógica:**
-- `ngspice` - SPICE con OSDI
-- `xyce` - SPICE paralelo
-- `gaw3-xschem` - Visor de ondas
-
-**Verificación:**
-- `netgen` - LVS
-- `cvc` - ERC
-
-**Utilidades:**
-- `openvaf` - Compilador Verilog-A (crítico para PDK dev)
-- `ciel` - Gestor versiones PDK
-
-### TIER 2: Digital Flow (Opcional) - ~12 herramientas
-Para diseño digital RTL-to-GDS.
-
-**Síntesis:**
-- `yosys` - Síntesis lógica
-- `ghdl` + plugin - VHDL support
-- `slang` + plugin - SystemVerilog
-
-**Place & Route:**
-- `openroad` - P&R engine
-- `librelane` - Flow completo
-
-**Simulación Digital:**
-- `iverilog` - Simulador Verilog
-- `verilator` - Simulador rápido
-- `ghdl` / `nvc` - Simuladores VHDL
-- `gtkwave` - Visor ondas digital
-- `cocotb` - Testbench Python
-
-**Verificación Formal:**
-- `eqy`, `sby`, `mcy` - Formal verification suite
-
-### TIER 3: PDK Development (Nuevo) - ~8 herramientas
-Específicas para desarrollo/mantenimiento del PDK.
-
-**Compilación de Modelos:**
-- `openvaf` - Verilog-A → OSDI
-- `adms` - Verilog-A legacy (para Xyce)
-
-**Caracterización:**
-- `charlib` - Caracterización std cells
-- `lctime` - Liberty timing
-- `cace` - Characterization engine
-
-**Testing/Validación:**
-- `pytest` - Framework testing
-- `ngspyce` - Python bindings ngspice
+#### Simulación Analógica
+- `ngspice` - SPICE con OSDI (modelos PSP)
+- `xyce` - SPICE paralelo con plugins Verilog-A
+- `gaw3-xschem` - Visor de ondas para xschem
+- `vacask` - Simulador analógico moderno
+- `ngspyce` - Python bindings para ngspice
 - `pyspice` - Python SPICE interface
 
-**Documentación:**
+#### Flujo Digital (RTL-to-GDS)
+- `yosys` - Síntesis lógica + plugins (ghdl, slang)
+- `openroad` - Place & Route engine
+- `librelane` - Flow RTL-to-GDS completo
+- `eqy`, `sby`, `mcy` - Verificación formal
+
+#### Simulación Digital
+- `iverilog` - Simulador Verilog
+- `verilator` - Simulador rápido
+- `ghdl` - Simulador VHDL
+- `nvc` - Simulador VHDL moderno
+- `gtkwave` - Visor ondas digital
+- `cocotb` - Testbench Python
+- `surfer` - Visor ondas moderno
+
+#### Verificación
+- `netgen` - LVS
+- `cvc` - ERC (circuit validity checker)
+- `covered` - Code coverage Verilog
+
+#### RF/EM (Mantener todas)
+- `openems` - Simulador EM FDTD
+- `palace` - Simulador 3D EM (AWS)
+- `qucs-s` - Entorno simulación RF
+- `rftoolkit` - FastHenry2, FasterCap
+- `gmsh` - Mesher 3D
+
+#### PDK Development
+- `openvaf` - Compilador Verilog-A → OSDI
+- `adms` - Compilador Verilog-A (legacy, para Xyce)
+- `charlib` - Caracterización std cells
+- `lctime` - Liberty timing characterization
+- `cace` - Circuit characterization engine
+- `ciel` - Gestor versiones PDK
+
+#### Utilidades Python/Scripting
+- `gdsfactory` - GDS scripting Python
+- `gdspy` - GDS manipulation
 - `schemdraw` - Diagramas circuitos
-- Scripts validación DRC/LVS
+- `pygmid` - gm/Id design methodology
+- `spicelib` - SPICE file manipulation
+- `hdl21`, `vlsirtools` - HDL Python libraries
 
-### TIER 4: Eliminadas - ~40+ herramientas
-No incluidas en la imagen IHP.
+#### Herramientas de Soporte
+- `slang` - Parser SystemVerilog
+- `surelog` - Parser SystemVerilog
+- `irsim` - Switch-level simulator
+- `qflow` - Conversion tools
+- `abc` - Logic synthesis
 
-**RF/EM (demasiado especializadas):**
-- openems, palace, qucs-s, rftoolkit
-- FastHenry2, FasterCap
+### ELIMINADAS - No incluidas en imagen IHP
 
-**RISC-V (no relevante):**
-- riscv-gnu-toolchain, spike, riscv-pk, pulp-tools
+#### PDKs (Eliminar sky130 y gf180)
+- `sky130A` PDK completo
+- `gf180mcuD` PDK completo
+- Tests y configs específicos de estos PDKs
 
-**FPGA (no ASIC):**
-- nextpnr
+#### RISC-V (No relevante para diseño IHP)
+- `riscv-gnu-toolchain` - Toolchain completo
+- `spike` - ISA simulator
+- `riscv-pk` - Proxy kernel
+- `pulp-tools` - PULP platform tools (bender, verible, sv2v)
 
-**Redundantes o poco usadas:**
-- xcircuit (usar xschem)
-- pyopus (removido por incompatibilidades)
-- surelog (cubierto por slang)
-- covered, irsim, qflow
-- kactus2, libman, najaeda
-- openram, padring
-- veryl, amaranth, chisel (HDLs alternativos)
-- pyuvm, fault
-- gdsfactory, gdspy (GDS scripting)
-- pygmid, hdl21, vlsirtools
-- siliconcompiler, rggen, fusesoc, edalize
-- surfer (crashes conocidos)
+#### FPGA (No aplica a ASIC)
+- `nextpnr` - FPGA place & route
+- `fpga-tools` - iCE40 toolchain
+
+#### Redundantes/Problemas conocidos
+- `pyopus` - Removido por incompatibilidades numpy
+- `kactus2` - IP-XACT editor (poco usado)
+- `libman` - Library manager (poco usado)
+- `najaeda` - EDA algorithms (experimental)
+- `openram` - Memory compiler (no IHP support)
+- `padring` - Padring generator (poco usado)
+- `fault` - DFT (poco usado)
+- `pyuvm` - UVM Python (usar cocotb)
+
+#### HDLs Alternativos (Simplificar)
+- `veryl` - HDL moderno (experimental)
+- `amaranth` - Python HDL (nicho)
+- `chisel` + SBT - Scala HDL (requiere JVM pesado)
+
+#### Otros
+- `siliconcompiler` - Build system (redundante con librelane)
+- `rggen` - Register generator (nicho)
+- `fusesoc`, `edalize` - Package managers (nicho)
 
 ---
 
-## Modos de Imagen
+## Imagen Única
 
-### Opción A: Imagen Única Configurable
-Una sola imagen con todo, ~8-10 GB (vs 20+ GB actual).
+Una sola imagen completa para todos los usuarios (diseñadores y desarrolladores PDK).
 
 ```dockerfile
-# Layers
-FROM base
-FROM tools-core      # Siempre
-FROM tools-digital   # Opcional via build arg
-FROM tools-pdk-dev   # Opcional via build arg
-FROM pdk-ihp         # PDK
+# Build layers
+FROM base              # Ubuntu 24.04 + deps runtime
+FROM base-dev          # + paquetes desarrollo
+FROM tools-all         # Todas las herramientas (~50)
+FROM pdk-ihp           # Solo IHP PDK
+FROM ihp-eda-tools     # Imagen final
 ```
 
-### Opción B: Múltiples Imágenes (Recomendada)
-Imágenes separadas por caso de uso.
+### Estimación de Tamaño
 
-| Imagen | Contenido | Tamaño Est. | Usuario |
-|--------|-----------|-------------|---------|
-| `ihp-eda:core` | Tier 1 + PDK | ~4 GB | Diseño analógico básico |
-| `ihp-eda:full` | Tier 1+2 + PDK | ~8 GB | Diseño completo |
-| `ihp-eda:pdk-dev` | Tier 1+3 + PDK (dev mode) | ~6 GB | Desarrolladores PDK |
+| Componente | Actual (3 PDKs) | IHP-only |
+|------------|-----------------|----------|
+| Base + Tools | ~15 GB | ~12 GB |
+| PDKs | ~5 GB (3 PDKs) | ~1.5 GB (solo IHP) |
+| **Total** | ~20 GB | ~13-14 GB |
+
+**Reducción estimada: ~30%** (principalmente por eliminar sky130, gf180, RISC-V toolchain)
 
 ---
 
@@ -221,67 +244,87 @@ pdk-dev/templates/new-tool-integration/
 
 ---
 
-## Beneficios de la Simplificación
+## Beneficios de la Especialización
 
-| Aspecto | Actual | Propuesto |
-|---------|--------|-----------|
-| Tamaño imagen | ~20 GB | 4-8 GB |
-| Herramientas | 70+ | 15-35 |
+| Aspecto | Actual (iic-osic-tools) | Propuesto (ihp-eda-tools) |
+|---------|-------------------------|---------------------------|
+| Tamaño imagen | ~20 GB | ~13-14 GB |
+| Herramientas | 70+ | ~50 |
 | PDKs | 3 | 1 (IHP) |
-| Tiempo build | Horas | ~1 hora |
-| Complejidad | Alta | Media |
+| Tiempo build | Varias horas | ~2 horas |
 | Foco | General | IHP específico |
+| Mantenimiento | Complejo | Simplificado |
+| Test cases | Distribuidos | Compartidos diseño/PDK |
 
 ---
 
 ## Fases de Implementación
 
-### Fase 1: Fork y Limpieza (1-2 semanas)
-1. Fork del repositorio
-2. Eliminar PDKs sky130 y gf180
-3. Eliminar herramientas Tier 4
-4. Simplificar scripts de build
-5. Actualizar tests (solo IHP)
+### Fase 1: Limpieza de PDKs y RISC-V
+1. ~~Fork del repositorio~~ (ya hecho - Mauricio-xx/iic-osic-tools)
+2. Eliminar instalación de PDKs sky130 y gf180
+3. Eliminar RISC-V toolchain completo
+4. Eliminar FPGA tools (nextpnr)
+5. Actualizar scripts de build
 
-### Fase 2: Reestructuración (1-2 semanas)
-1. Reorganizar estructura de directorios
-2. Crear sistema de tiers/layers
-3. Implementar múltiples variantes de imagen
-4. Actualizar documentación
+### Fase 2: Limpieza de Herramientas
+1. Eliminar herramientas marcadas como "ELIMINADAS"
+2. Actualizar tool_metadata.yml
+3. Actualizar docker-bake.hcl
+4. Limpiar Dockerfile final
 
-### Fase 3: PDK Development Mode (1 semana)
+### Fase 3: Actualizar Tests
+1. Eliminar tests de sky130 y gf180
+2. Mantener y mejorar tests IHP (05, 10, 11, 18)
+3. Agregar tests de validación PDK
+4. Crear test cases compartidos
+
+### Fase 4: PDK Development Mode
 1. Crear directorio pdk-dev/
 2. Implementar scripts de validación
 3. Crear templates de integración
-4. Documentar workflow de desarrollo
+4. Script start_pdk_dev.sh
 
-### Fase 4: Testing y Documentación (1 semana)
-1. Suite completa de tests IHP
-2. CI/CD simplificado
-3. Documentación usuario
-4. Documentación desarrollador PDK
-
----
-
-## Preguntas para Definir
-
-1. **Nombre del proyecto**: ¿`ihp-eda-tools`, `ihp-asic-tools`, otro?
-
-2. **Imágenes**: ¿Una imagen configurable o múltiples imágenes separadas?
-
-3. **Flujo digital**: ¿Incluir siempre o como variante opcional?
-
-4. **Herramientas RF**: ¿Eliminar completamente o mantener alguna?
-
-5. **Compatibilidad**: ¿Mantener compatibilidad con scripts iic-osic-tools originales?
-
-6. **Repositorio**: ¿Fork separado o branch en el mismo repo?
+### Fase 5: Documentación y CI/CD
+1. Actualizar CLAUDE.md para ihp-eda-tools
+2. Actualizar README.md
+3. Simplificar CI/CD
+4. Documentar workflow desarrollo PDK
 
 ---
 
-## Próximos Pasos
+## Archivos Principales a Modificar
 
-1. Validar este plan contigo
-2. Definir respuestas a las preguntas anteriores
-3. Crear estructura inicial del proyecto
-4. Comenzar Fase 1 de implementación
+### Build System
+| Archivo | Cambio |
+|---------|--------|
+| `_build/images/open_pdks/` | Eliminar sky130, gf180 |
+| `_build/images/riscv-gnu-toolchain/` | Eliminar |
+| `_build/images/fpga-tools/` | Eliminar |
+| `_build/tool_metadata.yml` | Limpiar herramientas eliminadas |
+| `_build/docker-bake.hcl` | Actualizar targets |
+| `_build/images/iic-osic-tools/Dockerfile` | Simplificar |
+
+### Tests
+| Archivo | Cambio |
+|---------|--------|
+| `_tests/01/` - `_tests/07/` | Eliminar (sky130/gf180) |
+| `_tests/08/`, `_tests/09/` | Eliminar (PULP/RISC-V) |
+| `_tests/13/`, `_tests/14/` | Eliminar (sky130/gf180) |
+| `_tests/05/`, `_tests/10/`, `_tests/11/`, `_tests/18/` | Mantener (IHP) |
+
+### Scripts
+| Archivo | Cambio |
+|---------|--------|
+| `start_*.sh` | Simplificar, IHP default |
+| `sak-pdk.sh` | Solo IHP (o eliminar) |
+| `sak-drc.sh`, `sak-lvs.sh`, `sak-pex.sh` | Solo IHP |
+
+---
+
+## Próximos Pasos Inmediatos
+
+1. ✅ Plan definido y aprobado
+2. Comenzar Fase 1: Eliminar PDKs sky130/gf180
+3. Eliminar RISC-V toolchain
+4. Probar build simplificado
