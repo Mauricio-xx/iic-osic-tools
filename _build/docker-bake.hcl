@@ -1,3 +1,6 @@
+# IHP-EDA-Tools: Docker Bake configuration
+# This is an IHP-focused container - RISC-V, FPGA, and unused tools have been removed
+
 target "base" {
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "images/base/Dockerfile"
@@ -17,26 +20,7 @@ group "tools" {
 target "image-full" {
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "images/iic-osic-tools/Dockerfile"
-  #tags = ["registry.iic.jku.at:5000/iic-osic-tools:latest"] # Do not set a default tag for now, so it can be handled in the build command.
 }
-
-#target "image-analog" {
-#  platforms = ["linux/amd64", "linux/arm64"]
-#  dockerfile = "images/iic-osic-tools/Dockerfile.full"
-#  tags = ["registry.iic.jku.at:5000/iic-osic-tools:latest-analog"]
-#}
-
-#target "image-digital" {
-#  platforms = ["linux/amd64", "linux/arm64"]
-#  dockerfile = "images/iic-osic-tools/Dockerfile.digital"
-#  tags = ["registry.iic.jku.at:5000/iic-osic-tools:latest-digital"]
-#}
-
-#target "image-riscv" {
-#  platforms = ["linux/amd64", "linux/arm64"]
-#  dockerfile = "images/iic-osic-tools/Dockerfile.riscv"
-#  tags = ["registry.iic.jku.at:5000/iic-osic-tools:latest"]
-#}
 
 group "images" {
   targets = ["image-full"]
@@ -92,13 +76,6 @@ target "cvc_rv" {
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-cvc_rv-latest"]
 }
 
-target "fpga" {
-  inherits = ["base-tool"]
-  dockerfile = "images/fpga-tools/Dockerfile"
-  tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-fpga-latest"]
-  cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-fpga-latest"]
-}
-
 target "gaw3-xschem" {
   inherits = ["base-tool"]
   dockerfile = "images/gaw3-xschem/Dockerfile"
@@ -134,25 +111,11 @@ target "iverilog" {
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-iverilog-latest"]
 }
 
-target "kactus2" {
-  inherits = ["base-tool"]
-  dockerfile = "images/kactus2/Dockerfile"
-  tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-kactus2-latest"]
-  cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-kactus2-latest"]
-}
-
 target "klayout" {
   inherits = ["base-tool"]
   dockerfile = "images/klayout/Dockerfile"
   tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-klayout-latest"]
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-klayout-latest"]
-}
-
-target "libman" {
-  inherits = ["base-tool"]
-  dockerfile = "images/libman/Dockerfile"
-  tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-libman-latest"]
-  cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-libman-latest"]
 }
 
 target "netgen" {
@@ -197,25 +160,11 @@ target "openroad-librelane" {
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-openroad-librelane-latest"]
 }
 
-target "padring" {
-  inherits = ["base-tool"]
-  dockerfile = "images/padring/Dockerfile"
-  tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-padring-latest"]
-  cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-padring-latest"]
-}
-
 target "palace" {
   inherits = ["base-tool"]
   dockerfile = "images/palace/Dockerfile"
   tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-palace-latest"]
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-palace-latest"]
-}
-
-target "pulp-tools" {
-  inherits = ["base-tool"]
-  dockerfile = "images/pulp-tools/Dockerfile"
-  tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-pulp-tools-latest"]
-  cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-pulp-tools-latest"]
 }
 
 target "surelog" {
@@ -246,13 +195,6 @@ target "qucs-s" {
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-qucs-s-latest"]
 }
 
-target "riscv-gnu-toolchain" {
-  inherits = ["base-tool"]
-  dockerfile = "images/riscv-gnu-toolchain/Dockerfile"
-  tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-riscv-gnu-toolchain-latest"]
-  cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-riscv-gnu-toolchain-latest"]
-}
-
 target "slang" {
   inherits = ["base-tool"]
   dockerfile = "images/slang/Dockerfile"
@@ -265,13 +207,6 @@ target "verilator" {
   dockerfile = "images/verilator/Dockerfile"
   tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-verilator-latest"]
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-verilator-latest"]
-}
-
-target "veryl" {
-  inherits = ["base-tool"]
-  dockerfile = "images/veryl/Dockerfile"
-  tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-veryl-latest"]
-  cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-veryl-latest"]
 }
 
 target "xcircuit" {
@@ -338,13 +273,6 @@ target "slang-yosys-plugin" {
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-slang-yosys-plugin-latest"]
 }
 
-target "spike" {
-  inherits = ["base-tool"]
-  dockerfile = "images/spike/Dockerfile"
-  tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-spike-latest"]
-  cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-spike-latest"]
-}
-
 # Individual tool targets for tools-level-3
 target "gds3d" {
   inherits = ["base-tool"]
@@ -360,17 +288,21 @@ target "ngspice" {
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-ngspice-latest"]
 }
 
-# Group targets for tools-level-1
+# Group targets for tools-level-1 (IHP-focused: removed fpga, kactus2, libman, padring, pulp-tools, riscv, veryl)
 group "tools-level-1" {
   targets = [
-    "magic", "openvaf", "osic-multitool", "xyce", "covered", "cvc_rv", "fpga", "gaw3-xschem", "ghdl", "gtkwave", "irsim", "iverilog", "kactus2", "klayout", "libman", "netgen", "ngspyce", "nvc", "openems", "padring", "palace", "pulp-tools", "surelog", "surfer", "qflow", "qucs-s", "riscv-gnu-toolchain", "slang", "verilator", "veryl", "xcircuit", "xschem", "yosys", "rftoolkit", "openroad", "openroad-librelane"
+    "magic", "openvaf", "osic-multitool", "xyce", "covered", "cvc_rv",
+    "gaw3-xschem", "ghdl", "gtkwave", "irsim", "iverilog", "klayout",
+    "netgen", "ngspyce", "nvc", "openems", "palace", "surelog", "surfer",
+    "qflow", "qucs-s", "slang", "verilator", "xcircuit", "xschem", "yosys",
+    "rftoolkit", "openroad", "openroad-librelane"
   ]
 }
 
-# Group targets for tools-level-2
+# Group targets for tools-level-2 (IHP-focused: removed spike)
 group "tools-level-2" {
   targets = [
-    "open_pdks", "vacask", "ghdl-yosys-plugin", "slang-yosys-plugin", "spike"
+    "open_pdks", "vacask", "ghdl-yosys-plugin", "slang-yosys-plugin"
   ]
   # "xyce-xdm" disabled
 }
