@@ -69,6 +69,13 @@ target "covered" {
   cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-covered-latest"]
 }
 
+target "digital" {
+  inherits = ["base-tool"]
+  dockerfile = "images/digital/Dockerfile"
+  tags = ["registry.iic.jku.at:5000/iic-osic-tools:tool-digital-latest"]
+  cache-from = ["type=registry,ref=registry.iic.jku.at:5000/iic-osic-tools:tool-digital-latest"]
+}
+
 target "cvc_rv" {
   inherits = ["base-tool"]
   dockerfile = "images/cvc_rv/Dockerfile"
@@ -292,7 +299,7 @@ target "ngspice" {
 group "tools-level-1" {
   targets = [
     "magic", "openvaf", "osic-multitool", "xyce", "covered", "cvc_rv",
-    "gaw3-xschem", "ghdl", "gtkwave", "irsim", "iverilog", "klayout",
+    "digital", "gaw3-xschem", "ghdl", "gtkwave", "irsim", "iverilog", "klayout",
     "netgen", "ngspyce", "nvc", "openems", "palace", "surelog", "surfer",
     "qflow", "qucs-s", "slang", "verilator", "xcircuit", "xschem", "yosys",
     "rftoolkit", "openroad", "openroad-librelane"

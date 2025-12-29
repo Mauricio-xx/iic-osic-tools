@@ -6,6 +6,7 @@ ARG BASE_IMAGE=registry.iic.jku.at:5000/iic-osic-tools:base
 
 ARG TOOL_IMAGE_OPEN_PDKS="registry.iic.jku.at:5000/iic-osic-tools:tool-open_pdks-latest"
 ARG TOOL_IMAGE_COVERED="registry.iic.jku.at:5000/iic-osic-tools:tool-covered-latest"
+ARG TOOL_IMAGE_DIGITAL="registry.iic.jku.at:5000/iic-osic-tools:tool-digital-latest"
 ARG TOOL_IMAGE_CVC_RV="registry.iic.jku.at:5000/iic-osic-tools:tool-cvc_rv-latest"
 ARG TOOL_IMAGE_GAW3_XSCHEM="registry.iic.jku.at:5000/iic-osic-tools:tool-gaw3-xschem-latest"
 ARG TOOL_IMAGE_GDS3D="registry.iic.jku.at:5000/iic-osic-tools:tool-gds3d-latest"
@@ -42,6 +43,7 @@ ARG TOOL_IMAGE_SLANG_YOSYS_PLUGIN="registry.iic.jku.at:5000/iic-osic-tools:tool-
 
 FROM ${TOOL_IMAGE_OPEN_PDKS} AS open_pdks
 FROM ${TOOL_IMAGE_COVERED} AS covered
+FROM ${TOOL_IMAGE_DIGITAL} AS digital
 FROM ${TOOL_IMAGE_CVC_RV} AS cvc_rv
 FROM ${TOOL_IMAGE_GAW3_XSCHEM} AS gaw3-xschem
 FROM ${TOOL_IMAGE_GDS3D} AS gds3d
@@ -86,6 +88,7 @@ ENV IIC_OSIC_TOOLS_VERSION=${CONTAINER_TAG}
 # Copy all layers into the final container
 COPY --link --from=open_pdks                    ${PDK_ROOT}/                    ${PDK_ROOT}/
 COPY --link --from=covered                      ${TOOLS}/covered                ${TOOLS}/covered/
+COPY --link --from=digital                      ${TOOLS}/digital                ${TOOLS}/digital/
 COPY --link --from=cvc_rv                       ${TOOLS}/cvc_rv                 ${TOOLS}/cvc_rv/
 COPY --link --from=gaw3-xschem                  ${TOOLS}/gaw3-xschem            ${TOOLS}/gaw3-xschem/
 COPY --link --from=gds3d                        ${TOOLS}/gds3d                  ${TOOLS}/gds3d/

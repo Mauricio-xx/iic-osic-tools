@@ -98,6 +98,7 @@ Key PDK features:
 - `eqy`, `sby`, `mcy` - Formal verification
 
 #### Digital Simulation
+- `digital` - Logic designer and circuit simulator (educational)
 - `iverilog` - Verilog simulator
 - `verilator` - Fast Verilog simulator
 - `ghdl` - VHDL simulator
