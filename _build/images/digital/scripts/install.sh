@@ -3,24 +3,26 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Install Digital - Logic Designer and Circuit Simulator
-# https://github.com/hneemann/Digital
+# https://github.com/Mauricio-xx/digital-designer
 
 set -e
-cd /tmp || exit 1
+cd /tmp
 
-# Extract version number from tag (e.g., v0.31 -> 0.31)
-VERSION="${DIGITAL_REPO_COMMIT#v}"
+# Clone repository (full history required for git-commit-id-plugin)
+echo "[INFO] Cloning Digital from ${DIGITAL_REPO_URL}"
+git clone "${DIGITAL_REPO_URL}" digital-src
+cd digital-src
+git checkout "${DIGITAL_REPO_COMMIT}"
 
-# Download release ZIP
-DOWNLOAD_URL="${DIGITAL_REPO_URL}/releases/download/${DIGITAL_REPO_COMMIT}/Digital.zip"
-echo "[INFO] Downloading Digital ${DIGITAL_REPO_COMMIT} from ${DOWNLOAD_URL}"
-curl -L -o Digital.zip "${DOWNLOAD_URL}"
+# Build with Maven
+echo "[INFO] Building Digital with Maven..."
+mvn package -DskipTests -q
 
-# Create installation directory
-mkdir -p "${TOOLS}/${DIGITAL_NAME}"
-
-# Extract
-unzip -q Digital.zip -d "${TOOLS}/${DIGITAL_NAME}"
+# Install
+mkdir -p "${TOOLS}/${DIGITAL_NAME}/bin"
+cp target/Digital.jar "${TOOLS}/${DIGITAL_NAME}/"
+cp -r examples "${TOOLS}/${DIGITAL_NAME}/" 2>/dev/null || true
+cp -r distribution/docu "${TOOLS}/${DIGITAL_NAME}/" 2>/dev/null || true
 
 # Create launcher script
 cat > "${TOOLS}/${DIGITAL_NAME}/bin/digital" << 'EOF'
@@ -29,18 +31,15 @@ cat > "${TOOLS}/${DIGITAL_NAME}/bin/digital" << 'EOF'
 DIGITAL_HOME="$(dirname "$(dirname "$(readlink -f "$0")")")"
 java -jar "${DIGITAL_HOME}/Digital.jar" "$@"
 EOF
-
-mkdir -p "${TOOLS}/${DIGITAL_NAME}/bin"
-mv "${TOOLS}/${DIGITAL_NAME}/digital" "${TOOLS}/${DIGITAL_NAME}/bin/" 2>/dev/null || true
 chmod +x "${TOOLS}/${DIGITAL_NAME}/bin/digital"
 
 # Verify installation
 if [ -f "${TOOLS}/${DIGITAL_NAME}/Digital.jar" ]; then
     echo "[INFO] Digital installed successfully at ${TOOLS}/${DIGITAL_NAME}"
 else
-    echo "[ERROR] Digital.jar not found after installation"
+    echo "[ERROR] Digital.jar not found after build"
     exit 1
 fi
 
 # Cleanup
-rm -f Digital.zip
+cd /tmp && rm -rf digital-src
