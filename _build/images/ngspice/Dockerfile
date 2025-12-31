@@ -1,7 +1,7 @@
 #######################################################################
 # Compile ngspice
 #######################################################################
-ARG TOOL_IMAGE_OPEN_PDKS="registry.iic.jku.at:5000/iic-osic-tools:tool-open_pdks-latest"
+ARG TOOL_IMAGE_OPEN_PDKS="ghcr.io/mauricio-xx/ihp-eda-tools:tool-open_pdks-latest"
 FROM ${TOOL_IMAGE_OPEN_PDKS} AS ngspice
 ARG NGSPICE_REPO_URL="https://github.com/danchitnis/ngspice-sf-mirror.git"
 ARG NGSPICE_REPO_COMMIT="ngspice-45.2"

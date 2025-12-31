@@ -1,7 +1,7 @@
 #######################################################################
 # Install Digital - Logic Designer and Circuit Simulator
 #######################################################################
-ARG BASE_IMAGE_BUILD=registry.iic.jku.at:5000/iic-osic-tools:base-dev
+ARG BASE_IMAGE_BUILD=ghcr.io/mauricio-xx/ihp-eda-tools:base-dev
 FROM ${BASE_IMAGE_BUILD} AS digital
 ARG DIGITAL_REPO_URL="https://github.com/Mauricio-xx/digital-designer.git"
 ARG DIGITAL_REPO_COMMIT="master"

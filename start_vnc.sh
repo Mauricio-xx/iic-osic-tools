@@ -46,7 +46,7 @@ if [ -z ${DOCKER_USER+z} ]; then
 fi
 
 if [ -z ${DOCKER_IMAGE+z} ]; then
-	DOCKER_IMAGE="iic-osic-tools"
+	DOCKER_IMAGE="ihp-eda-tools"
 fi
 
 if [ -z ${DOCKER_TAG+z} ]; then
@@ -54,7 +54,7 @@ if [ -z ${DOCKER_TAG+z} ]; then
 fi
 
 if [ -z ${CONTAINER_NAME+z} ]; then
-	CONTAINER_NAME="iic-osic-tools_xvnc_uid_"$(id -u)
+	CONTAINER_NAME="ihp-eda-tools_xvnc_uid_"$(id -u)
 fi
 
 if [[ "$OSTYPE" == "linux"* ]]; then

@@ -31,11 +31,11 @@ if [ -z ${BUILDER_NAME+z} ]; then
 fi
 
 if [ -z ${DOCKER_PREFIXES+z} ]; then
-        DOCKER_PREFIXES="registry.iic.jku.at:5000"
+        DOCKER_PREFIXES="ghcr.io/mauricio-xx,docker.io/mauricio-xx"
 fi
 
 if [ -z ${DOCKER_IMAGE+z} ]; then
-        DOCKER_IMAGE="iic-osic-tools"
+        DOCKER_IMAGE="ihp-eda-tools"
 fi
 
 if [ -z ${CONTAINER_TAG} ]; then

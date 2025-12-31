@@ -1,7 +1,7 @@
 #######################################################################
 # Compile openvaf-reloaded
 #######################################################################
-ARG BASE_IMAGE_BUILD=registry.iic.jku.at:5000/iic-osic-tools:base-dev
+ARG BASE_IMAGE_BUILD=ghcr.io/mauricio-xx/ihp-eda-tools:base-dev
 FROM ${BASE_IMAGE_BUILD} AS openvaf
 ARG OPENVAF_REPO_URL="https://github.com/arpadbuermen/OpenVAF.git"
 ARG OPENVAF_REPO_COMMIT="fce38d894b7a8e92a76b8fd76e842eb02cec3659"

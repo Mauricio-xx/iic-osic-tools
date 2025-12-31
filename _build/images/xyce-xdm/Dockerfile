@@ -1,4 +1,4 @@
-ARG TOOL_IMAGE_XYCE="registry.iic.jku.at:5000/iic-osic-tools:tool-xyce-latest"
+ARG TOOL_IMAGE_XYCE="ghcr.io/mauricio-xx/ihp-eda-tools:tool-xyce-latest"
 
 FROM ${TOOL_IMAGE_XYCE} AS xyce-xdm
 ARG XYCE_XDM_REPO_URL="https://github.com/Xyce/XDM.git"

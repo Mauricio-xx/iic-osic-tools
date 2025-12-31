@@ -1,12 +1,26 @@
-# IIC-OSIC-TOOLS
+# IHP-EDA-Tools
 
-[![DOI](https://zenodo.org/badge/477419126.svg)](https://doi.org/10.5281/zenodo.14387234)
+**IHP-EDA-Tools** is an all-in-one Docker/Podman container for open-source-based integrated circuit designs, **focused exclusively on the IHP SG13G2 130nm BiCMOS PDK**. This is a fork of [iic-osic-tools](https://github.com/iic-jku/iic-osic-tools) optimized for IHP-based designs.
 
-**IIC-OSIC-TOOLS** (Integrated Infrastructure for Collaborative Open Source IC Tools) is an all-in-one Docker/Podman container for open-source-based integrated circuit designs for analog and digital circuit flows. The CPU architectures `x86_64/amd64` and `aarch64/arm64` are natively supported based on Ubuntu 24.04 LTS (since release `2025.01`). This collection of tools is curated by the [**Department for Integrated Circuits (ICD), Johannes Kepler University (JKU)**](https://iic.jku.at).
+Based on Ubuntu 24.04 LTS, supporting `x86_64/amd64` architecture.
+
+## Key Differences from iic-osic-tools
+
+- **Single PDK**: Only IHP SG13G2 (no sky130, gf180)
+- **Streamlined toolset**: Removed RISC-V, FPGA, and unused tools
+- **Independent infrastructure**: Builds via GitHub Actions to GHCR and Docker Hub
+
+## Quick Start
+
+```bash
+docker pull ghcr.io/mauricio-xx/ihp-eda-tools:latest
+# or
+docker pull mauricio-xx/ihp-eda-tools:latest
+```
 
 ## Table of Contents
 
-- [IIC-OSIC-TOOLS](#iic-osic-tools)
+- [IHP-EDA-Tools](#ihp-eda-tools)
   - [Table of Contents](#table-of-contents)
   - [1. How to Use These Open-Source (and Free) IC Design Tools](#1-how-to-use-these-open-source-and-free-ic-design-tools)
     - [1.1 Step 1: Clone/download this GitHub repository onto your computer](#11-step-1-clonedownload-this-github-repository-onto-your-computer)

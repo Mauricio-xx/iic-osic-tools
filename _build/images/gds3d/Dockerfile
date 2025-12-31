@@ -1,7 +1,7 @@
 #######################################################################
 # Compile GDS3D
 #######################################################################
-ARG TOOL_IMAGE_OPEN_PDKS="registry.iic.jku.at:5000/iic-osic-tools:tool-open_pdks-latest"
+ARG TOOL_IMAGE_OPEN_PDKS="ghcr.io/mauricio-xx/ihp-eda-tools:tool-open_pdks-latest"
 FROM ${TOOL_IMAGE_OPEN_PDKS} AS gds3d
 ARG GDS3D_REPO_URL="https://github.com/trilomix/GDS3D.git"
 ARG GDS3D_REPO_COMMIT="dc6d965225c9f5ed2a6faefb7ea30665429060fe"

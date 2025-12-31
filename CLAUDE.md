@@ -4,9 +4,9 @@
 
 **IHP-EDA-TOOLS** is an IHP-focused Docker/Podman container providing open-source EDA (Electronic Design Automation) tools for integrated circuit (IC) design with the IHP SG13G2 PDK. It supports both analog and digital circuit design flows.
 
-This is a specialized fork of [IIC-OSIC-TOOLS](https://github.com/iic-jku/iic-osic-tools), focused exclusively on the IHP SG13G2 130nm SiGe:C BiCMOS process.
+This is a specialized fork of [IHP-EDA-Tools](https://github.com/iic-jku/ihp-eda-tools), focused exclusively on the IHP SG13G2 130nm SiGe:C BiCMOS process.
 
-- **Original Project**: IIC-OSIC-TOOLS by Johannes Kepler University (JKU)
+- **Original Project**: IHP-EDA-Tools by Johannes Kepler University (JKU)
 - **This Fork**: IHP-focused container by Mauricio-xx
 - **License**: Apache-2.0
 - **Architectures**: `x86_64/amd64` and `aarch64/arm64` (native support)
@@ -14,7 +14,7 @@ This is a specialized fork of [IIC-OSIC-TOOLS](https://github.com/iic-jku/iic-os
 
 ## Key Differences from Upstream
 
-| Aspect | IIC-OSIC-TOOLS | IHP-EDA-TOOLS |
+| Aspect | IHP-EDA-Tools | IHP-EDA-TOOLS |
 |--------|----------------|---------------|
 | PDKs | sky130, gf180mcu, ihp-sg13g2 | IHP SG13G2 only |
 | RISC-V | Full toolchain | Removed |
@@ -32,7 +32,7 @@ ihp-eda-tools/
 │   │   ├── base/              # Base image with system dependencies
 │   │   ├── base-dev/          # Development base with *-dev packages
 │   │   ├── open_pdks/         # IHP PDK installation only
-│   │   ├── iic-osic-tools/    # Final combined image
+│   │   ├── ihp-eda-tools/    # Final combined image
 │   │   │   ├── Dockerfile     # Multi-stage final image build
 │   │   │   └── skel/          # Skeleton files copied into image
 │   │   └── <tool>/            # Each tool has its own directory
@@ -214,7 +214,7 @@ cd _build
 |------|---------|
 | `_build/tool_metadata.yml` | Tool version pins |
 | `_build/docker-bake.hcl` | Docker Bake configuration |
-| `_build/images/iic-osic-tools/Dockerfile` | Final image assembly |
+| `_build/images/ihp-eda-tools/Dockerfile` | Final image assembly |
 | `_build/images/open_pdks/scripts/install_ihp.sh` | IHP PDK installation |
 | `pdk-dev/` | PDK development scripts |
 | `start_pdk_dev.sh` | PDK development mode launcher |
@@ -237,7 +237,7 @@ cd _build
 
 ## Contributing
 
-This is a fork maintained separately from upstream IIC-OSIC-TOOLS.
+This is a fork maintained separately from upstream IHP-EDA-Tools.
 
 - **No pull requests to upstream** - This fork has diverged intentionally
 - For PDK issues: https://github.com/IHP-GmbH/IHP-Open-PDK

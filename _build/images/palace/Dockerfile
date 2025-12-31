@@ -1,7 +1,7 @@
 #######################################################################
 # Compile palace
 #######################################################################
-ARG TOOL_IMAGE_PALACE=registry.iic.jku.at:5000/iic-osic-tools:base-dev
+ARG TOOL_IMAGE_PALACE=ghcr.io/mauricio-xx/ihp-eda-tools:base-dev
 FROM ${TOOL_IMAGE_PALACE} AS palace
 ARG PALACE_REPO_URL="https://github.com/awslabs/palace"
 ARG PALACE_REPO_COMMIT="ac0909afdb365d71178d48cc5670b866e26f7b2a"
