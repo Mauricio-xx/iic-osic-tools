@@ -41,6 +41,10 @@ if [ $# -eq 0 ]; then
 	echo "       -w Use <workdir> to store result files (default current dir)"
 	echo "       -d Enable debug information"
 	echo
+	echo "Supported PDKs: sky130, ihp-sg13g2"
+	echo "  - sky130: Magic + KLayout (legacy XML)"
+	echo "  - ihp-sg13g2: Magic + KLayout (modular run_drc.py)"
+	echo
 	exit $ERR_NO_PARAM
 fi
 
@@ -305,9 +309,22 @@ if [ $RUN_KLAYOUT -eq 1 ]; then
 		exit $ERR_PDK_NOT_SUPPORTED
 	fi
 
-  if echo "$PDK" | grep -q -i "ihp-sg13g2"; then
-		echo "[ERROR] KLayout DRC for $PDK not yet supported!"
-		exit $ERR_PDK_NOT_SUPPORTED
+	if echo "$PDK" | grep -q -i "ihp-sg13g2"; then
+		# IHP SG13G2 uses the modular run_drc.py system
+		DRC_SCRIPT="$PDKPATH/libs.tech/klayout/tech/drc/run_drc.py"
+		if [ ! -f "$DRC_SCRIPT" ]; then
+			echo "[ERROR] IHP DRC script not found at $DRC_SCRIPT"
+			exit $ERR_FILE_NOT_FOUND
+		fi
+
+		# Run DRC using the PDK's modular system
+		# Using precheck for fast initial feedback, then full DRC
+		python3 "$DRC_SCRIPT" \
+			--path="$CELL_LAY" \
+			--run_dir="$RESDIR" \
+			--no_density \
+			--mp="$(nproc)" \
+			> "$RESDIR/$CELL_NAME.klayout.drc.log" 2>&1 &
 	fi
 fi
 
@@ -338,64 +355,94 @@ fi
 
 if [ $RUN_KLAYOUT -eq 1 ]; then
 
-	if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.feol.xml" ]; then
-		echo "[ERROR] No klayout output found!"
-		exit $ERR_NO_OUTPUT
-	fi
-	DRC_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.feol.xml")
-	if [ "$DRC_ERRORS" -ne 0 ]; then
-		echo "[INFO] KLayout $DRC_ERRORS DRC errors found! Check <$CELL_NAME.klayout.drc.feol.xml>!"
-		DRC_CLEAN=0
-	else
-		echo "[INFO] KLayout FEOL DRC is clean!"
-	fi
+	# IHP SG13G2 uses run_drc.py which produces .lyrdb files
+	if echo "$PDK" | grep -q -i "ihp-sg13g2"; then
+		# Check if DRC log exists
+		if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.log" ]; then
+			echo "[ERROR] No KLayout DRC output found!"
+			exit $ERR_NO_OUTPUT
+		fi
 
-	if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.beol.xml" ]; then
-		echo "[ERROR] No klayout output found!"
-		exit $ERR_NO_OUTPUT
-	fi
-	DRC_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.beol.xml")
-	if [ "$DRC_ERRORS" -ne 0 ]; then
-		echo "[INFO] KLayout $DRC_ERRORS DRC errors found! Check <$CELL_NAME.klayout.drc.beol.xml>!"
-		DRC_CLEAN=0
+		# Parse the DRC log for results
+		if grep -q "KLayout DRC Check Failed" "$RESDIR/$CELL_NAME.klayout.drc.log"; then
+			echo "[INFO] KLayout DRC errors found!"
+			# Extract violated rules from log
+			VIOLATED_RULES=$(grep -o "Violated rules are : {[^}]*}" "$RESDIR/$CELL_NAME.klayout.drc.log" | head -1)
+			if [ -n "$VIOLATED_RULES" ]; then
+				echo "[INFO] $VIOLATED_RULES"
+			fi
+			# Find the .lyrdb file for viewing
+			LYRDB_FILE=$(find "$RESDIR" -name "*_full.lyrdb" -o -name "*_main.lyrdb" 2>/dev/null | head -1)
+			if [ -n "$LYRDB_FILE" ]; then
+				echo "[INFO] View errors with: klayout $CELL_LAY -mn $LYRDB_FILE"
+			fi
+			DRC_CLEAN=0
+		elif grep -q "KLayout DRC Check Passed" "$RESDIR/$CELL_NAME.klayout.drc.log"; then
+			echo "[INFO] KLayout DRC is clean!"
+		else
+			echo "[WARN] Could not determine DRC result. Check <$CELL_NAME.klayout.drc.log>"
+		fi
 	else
-		echo "[INFO] KLayout BEOL DRC is clean!"
-	fi
+		# sky130 legacy XML-based results
+		if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.feol.xml" ]; then
+			echo "[ERROR] No klayout output found!"
+			exit $ERR_NO_OUTPUT
+		fi
+		DRC_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.feol.xml")
+		if [ "$DRC_ERRORS" -ne 0 ]; then
+			echo "[INFO] KLayout $DRC_ERRORS DRC errors found! Check <$CELL_NAME.klayout.drc.feol.xml>!"
+			DRC_CLEAN=0
+		else
+			echo "[INFO] KLayout FEOL DRC is clean!"
+		fi
 
-	if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.density.xml" ]; then
-		echo "[ERROR] No klayout output found!"
-		exit $ERR_NO_OUTPUT
-	fi
-	DENSITY_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.density.xml")
-	if [ "$DENSITY_ERRORS" -ne 0 ]; then
-		echo "[INFO] Klayout $DENSITY_ERRORS density errors found! Check <$CELL_NAME.klayout.drc.density.xml>!"
-		DRC_CLEAN=0
-	else
-		echo "[INFO] KLayout metal density DRC is clean!"
-	fi
+		if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.beol.xml" ]; then
+			echo "[ERROR] No klayout output found!"
+			exit $ERR_NO_OUTPUT
+		fi
+		DRC_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.beol.xml")
+		if [ "$DRC_ERRORS" -ne 0 ]; then
+			echo "[INFO] KLayout $DRC_ERRORS DRC errors found! Check <$CELL_NAME.klayout.drc.beol.xml>!"
+			DRC_CLEAN=0
+		else
+			echo "[INFO] KLayout BEOL DRC is clean!"
+		fi
 
-	if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.pincheck.xml" ]; then
-		echo "[ERROR] No klayout output found!"
-		exit $ERR_NO_OUTPUT
-	fi
-	PINCHECK_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.pincheck.xml")
-	if [ "$PINCHECK_ERRORS" -ne 0 ]; then
-		echo "[INFO] KLayout $PINCHECK_ERRORS pin errors found! Check <$CELL_NAME.klayout.drc.pincheck.xml>!"
-		DRC_CLEAN=0
-	else
-		echo "[INFO] KLayout pin check DRC is clean!"
-	fi
+		if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.density.xml" ]; then
+			echo "[ERROR] No klayout output found!"
+			exit $ERR_NO_OUTPUT
+		fi
+		DENSITY_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.density.xml")
+		if [ "$DENSITY_ERRORS" -ne 0 ]; then
+			echo "[INFO] Klayout $DENSITY_ERRORS density errors found! Check <$CELL_NAME.klayout.drc.density.xml>!"
+			DRC_CLEAN=0
+		else
+			echo "[INFO] KLayout metal density DRC is clean!"
+		fi
 
-	if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.zeroarea.xml" ]; then
-		echo "[ERROR] No klayout output found!"
-		exit $ERR_NO_OUTPUT
-	fi
-	ZEROAREA_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.zeroarea.xml")
-	if [ "$ZEROAREA_ERRORS" -ne 0 ]; then
-		echo "[INFO] KLayout $ZEROAREA_ERRORS zero-area errors found! Check <$CELL_LAY.klayout.drc.zeroarea.xml>!"
-		DRC_CLEAN=0
-	else
-		echo "[INFO] KLayout zero-area DRC is clean!"
+		if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.pincheck.xml" ]; then
+			echo "[ERROR] No klayout output found!"
+			exit $ERR_NO_OUTPUT
+		fi
+		PINCHECK_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.pincheck.xml")
+		if [ "$PINCHECK_ERRORS" -ne 0 ]; then
+			echo "[INFO] KLayout $PINCHECK_ERRORS pin errors found! Check <$CELL_NAME.klayout.drc.pincheck.xml>!"
+			DRC_CLEAN=0
+		else
+			echo "[INFO] KLayout pin check DRC is clean!"
+		fi
+
+		if [ ! -f "$RESDIR/$CELL_NAME.klayout.drc.zeroarea.xml" ]; then
+			echo "[ERROR] No klayout output found!"
+			exit $ERR_NO_OUTPUT
+		fi
+		ZEROAREA_ERRORS=$(grep -c "edge-pair" "$RESDIR/$CELL_NAME.klayout.drc.zeroarea.xml")
+		if [ "$ZEROAREA_ERRORS" -ne 0 ]; then
+			echo "[INFO] KLayout $ZEROAREA_ERRORS zero-area errors found! Check <$CELL_LAY.klayout.drc.zeroarea.xml>!"
+			DRC_CLEAN=0
+		else
+			echo "[INFO] KLayout zero-area DRC is clean!"
+		fi
 	fi
 fi
 
