@@ -20,7 +20,7 @@ if command -v librelane >/dev/null 2>&1; then
     # Run the LibreLane smoke test
     mkdir -p "$WORKDIR"
     cp "$DIR"/* "$WORKDIR"
-    librelane --manual-pdk "$WORKDIR/counter.json" > "$LOG"
+    librelane --manual-pdk "$WORKDIR/counter.json" > "$LOG" 2>&1
     # Check if there is an error in the log
     if grep -q "ERROR" "$LOG"; then
         echo "[ERROR] Test <LibreLane smoke-test with ihp-sg13g2> FAILED. Check the log <$LOG>."

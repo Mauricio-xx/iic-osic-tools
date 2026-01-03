@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2025 IHP-EDA-Tools Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# IHP-EDA-Tools Testcase Manifest
+# Master index of all available testcases
+
+manifest_version: "1.0.0"
+generated: "2025-01-03"
+pdk: ihp-sg13g2
+
+# ============================================================================
+# Gold Reference Testcases
+# Canonical examples maintained by IHP-EDA-Tools team
+# ============================================================================
+
+gold-reference:
+  analog:
+    nmos-iv-curve:
+      path: gold-reference/analog/nmos-iv-curve
+      name: "NMOS IV Curve"
+      type: simulation
+      tool: ngspice
+      description: "DC IV characterization of IHP SG13G2 low-voltage NMOS transistor"
+      difficulty: beginner
+      tags:
+        - nmos
+        - dc-sweep
+        - characterization
+
+  digital:
+    counter-rtl2gds:
+      path: gold-reference/digital/counter-rtl2gds
+      name: "Counter RTL-to-GDS"
+      type: rtl2gds
+      tool: librelane
+      description: "Complete RTL-to-GDS flow for a simple 32-bit counter"
+      difficulty: beginner
+      tags:
+        - rtl2gds
+        - librelane
+        - synthesis
+        - counter
+
+# ============================================================================
+# Validation Testcases
+# PDK verification and tool integration tests
+# ============================================================================
+
+validation:
+  # Placeholder for future validation testcases
+  # drc-rules:
+  #   basic-shapes:
+  #     path: validation/drc-rules/basic-shapes
+  #     ...
+  # lvs-setup:
+  #   nmos-extraction:
+  #     path: validation/lvs-setup/nmos-extraction
+  #     ...
+
+# ============================================================================
+# Contributed Testcases
+# Community-contributed examples
+# ============================================================================
+
+contributed:
+  # User-contributed testcases will be listed here
+  # These can be added via iic-testcase CLI or manually
+
+# ============================================================================
+# Categories and Types Reference
+# ============================================================================
+#
+# Categories:
+#   - gold-reference: Official examples maintained by IHP team
+#   - validation: PDK verification tests
+#   - contributed: Community contributions
+#
+# Types:
+#   - simulation: SPICE/Verilog-A simulation
+#   - drc: Design Rule Check
+#   - lvs: Layout vs Schematic
+#   - pex: Parasitic Extraction
+#   - rtl2gds: Complete digital flow
+#   - rf: RF/EM simulation
+#
+# Difficulty levels:
+#   - beginner: Basic examples for new users
+#   - intermediate: More complex flows
+#   - advanced: Complex multi-step verification
+#
+# ============================================================================
