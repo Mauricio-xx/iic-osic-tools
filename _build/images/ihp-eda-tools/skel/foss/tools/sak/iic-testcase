@@ -484,6 +484,247 @@ cmd_verify() {
 }
 
 # ========================================================================
+# Command: validate
+# ========================================================================
+
+cmd_validate() {
+    local testcase_id=""
+    local output_dir=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --output) output_dir="$2"; shift 2 ;;
+            -*) shift ;;
+            *) testcase_id="$1"; shift ;;
+        esac
+    done
+
+    if [ -z "$testcase_id" ]; then
+        log_error "Usage: iic-testcase validate <testcase-id> [--output <dir>]"
+        exit 1
+    fi
+
+    local testcase_dir=$(find_testcase "$testcase_id")
+
+    if [ -z "$testcase_dir" ] || [ ! -d "$testcase_dir" ]; then
+        log_error "Testcase not found: $testcase_id"
+        exit 1
+    fi
+
+    local yaml_file="$testcase_dir/testcase.yaml"
+    local run_script="$testcase_dir/run.sh"
+
+    if [ ! -f "$run_script" ]; then
+        log_error "No run.sh found in $testcase_dir"
+        exit 1
+    fi
+
+    # Set output directory
+    if [ -z "$output_dir" ]; then
+        output_dir="$testcase_dir/output"
+    fi
+
+    echo ""
+    echo "=========================================="
+    echo "TESTCASE VALIDATION: $testcase_id"
+    echo "=========================================="
+    echo ""
+
+    # Step 1: Run the testcase
+    log_info "Step 1: Executing testcase..."
+    export TESTCASE_DIR="$testcase_dir"
+    export OUTPUT_DIR="$output_dir"
+
+    local run_status=0
+    if bash "$run_script"; then
+        log_success "Testcase execution completed"
+    else
+        log_error "Testcase execution failed"
+        run_status=1
+    fi
+
+    # Step 2: Validate outputs
+    log_info "Step 2: Validating outputs..."
+
+    local validation_errors=0
+    local validation_count=0
+
+    # Parse expected_outputs from YAML (simple parsing)
+    local in_expected_outputs=0
+    local current_path=""
+    local current_method=""
+    local must_contain=()
+    local must_not_contain=()
+
+    while IFS= read -r line; do
+        # Check if we're entering expected_outputs section
+        if echo "$line" | grep -q "^expected_outputs:"; then
+            in_expected_outputs=1
+            continue
+        fi
+
+        # Check if we're leaving expected_outputs section (new top-level key)
+        if [ "$in_expected_outputs" -eq 1 ] && echo "$line" | grep -q "^[a-z]" && ! echo "$line" | grep -q "^  "; then
+            in_expected_outputs=0
+        fi
+
+        if [ "$in_expected_outputs" -eq 1 ]; then
+            # Parse path
+            if echo "$line" | grep -q "^  - path:"; then
+                # Process previous entry if exists
+                if [ -n "$current_path" ]; then
+                    validate_output "$testcase_dir" "$output_dir" "$current_path" "$current_method" "${must_contain[*]}" "${must_not_contain[*]}"
+                    validation_count=$((validation_count + 1))
+                    if [ $? -ne 0 ]; then
+                        validation_errors=$((validation_errors + 1))
+                    fi
+                fi
+                current_path=$(echo "$line" | sed 's/.*path:[[:space:]]*//' | tr -d '"')
+                current_method=""
+                must_contain=()
+                must_not_contain=()
+            fi
+
+            # Parse method
+            if echo "$line" | grep -q "method:"; then
+                current_method=$(echo "$line" | sed 's/.*method:[[:space:]]*//' | tr -d '"')
+            fi
+
+            # Parse must_not_contain items
+            if echo "$line" | grep -q "^        - "; then
+                local pattern=$(echo "$line" | sed 's/^        - //' | tr -d '"')
+                must_not_contain+=("$pattern")
+            fi
+        fi
+    done < "$yaml_file"
+
+    # Process last entry
+    if [ -n "$current_path" ]; then
+        validate_output "$testcase_dir" "$output_dir" "$current_path" "$current_method" "${must_contain[*]}" "${must_not_contain[*]}"
+        validation_count=$((validation_count + 1))
+        if [ $? -ne 0 ]; then
+            validation_errors=$((validation_errors + 1))
+        fi
+    fi
+
+    # Summary
+    echo ""
+    echo "=========================================="
+    echo "VALIDATION SUMMARY"
+    echo "=========================================="
+
+    if [ "$run_status" -ne 0 ]; then
+        log_error "Execution: FAILED"
+    else
+        log_success "Execution: PASSED"
+    fi
+
+    if [ "$validation_count" -eq 0 ]; then
+        log_warning "No expected outputs defined for validation"
+    elif [ "$validation_errors" -eq 0 ]; then
+        log_success "Outputs: $validation_count/$validation_count PASSED"
+    else
+        log_error "Outputs: $((validation_count - validation_errors))/$validation_count PASSED"
+    fi
+
+    echo ""
+
+    if [ "$run_status" -ne 0 ] || [ "$validation_errors" -ne 0 ]; then
+        log_error "OVERALL: FAILED"
+        return 1
+    else
+        log_success "OVERALL: PASSED"
+        return 0
+    fi
+}
+
+# Helper function to validate a single output
+validate_output() {
+    local testcase_dir="$1"
+    local output_dir="$2"
+    local expected_path="$3"
+    local method="$4"
+    local must_contain="$5"
+    local must_not_contain="$6"
+
+    # Determine actual output path (replace expected/ with output/)
+    local actual_path="$output_dir/$(basename "$expected_path")"
+
+    # Also check if it's directly under output_dir with same name
+    if [ ! -f "$actual_path" ]; then
+        actual_path=$(find "$output_dir" -name "$(basename "$expected_path")" -type f 2>/dev/null | head -1)
+    fi
+
+    log_info "Validating: $(basename "$expected_path")"
+
+    case "$method" in
+        exists)
+            if [ -f "$actual_path" ]; then
+                log_success "  File exists: $actual_path"
+                return 0
+            else
+                log_error "  File not found: $(basename "$expected_path")"
+                return 1
+            fi
+            ;;
+        pattern)
+            if [ ! -f "$actual_path" ]; then
+                # Check log files for patterns
+                local log_file=$(find "$output_dir" -name "*.log" -type f 2>/dev/null | head -1)
+                if [ -n "$log_file" ]; then
+                    actual_path="$log_file"
+                else
+                    log_error "  No output file found for pattern matching"
+                    return 1
+                fi
+            fi
+
+            local pattern_errors=0
+
+            # Check must_not_contain patterns
+            for pattern in $must_not_contain; do
+                if grep -qi "$pattern" "$actual_path" 2>/dev/null; then
+                    log_error "  Found forbidden pattern: '$pattern'"
+                    pattern_errors=$((pattern_errors + 1))
+                fi
+            done
+
+            if [ "$pattern_errors" -eq 0 ]; then
+                log_success "  Pattern validation passed"
+                return 0
+            else
+                return 1
+            fi
+            ;;
+        checksum)
+            local expected_file="$testcase_dir/$expected_path"
+            if [ -f "$expected_file" ] && [ -f "$actual_path" ]; then
+                if iic-testcase-compare checksum "$actual_path" "$expected_file" -q; then
+                    log_success "  Checksum matches"
+                    return 0
+                else
+                    log_error "  Checksum mismatch"
+                    return 1
+                fi
+            else
+                log_warning "  Cannot compare checksums (missing files)"
+                return 0
+            fi
+            ;;
+        *)
+            # Default: check if file exists
+            if [ -f "$actual_path" ]; then
+                log_success "  Output exists: $(basename "$actual_path")"
+                return 0
+            else
+                log_warning "  Output not found (no validation method specified)"
+                return 0
+            fi
+            ;;
+    esac
+}
+
+# ========================================================================
 # Command: export
 # ========================================================================
 
@@ -561,7 +802,7 @@ case "$COMMAND" in
         cmd_run "$@"
         ;;
     validate)
-        cmd_run "$@"
+        cmd_validate "$@"
         ;;
     init)
         cmd_init "$@"

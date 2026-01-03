@@ -47,15 +47,33 @@ gold-reference:
 # ============================================================================
 
 validation:
-  # Placeholder for future validation testcases
-  # drc-rules:
-  #   basic-shapes:
-  #     path: validation/drc-rules/basic-shapes
-  #     ...
-  # lvs-setup:
-  #   nmos-extraction:
-  #     path: validation/lvs-setup/nmos-extraction
-  #     ...
+  drc:
+    klayout-invocation:
+      path: validation/drc/klayout-invocation
+      name: "KLayout DRC Invocation"
+      type: drc
+      tool: klayout
+      description: "Verify KLayout DRC environment is correctly configured"
+      difficulty: beginner
+      tags:
+        - drc
+        - klayout
+        - validation
+        - pdk-check
+
+  lvs:
+    netgen-invocation:
+      path: validation/lvs/netgen-invocation
+      name: "Netgen LVS Invocation"
+      type: lvs
+      tool: netgen
+      description: "Verify Netgen LVS environment is correctly configured"
+      difficulty: beginner
+      tags:
+        - lvs
+        - netgen
+        - validation
+        - pdk-check
 
 # ============================================================================
 # Contributed Testcases
