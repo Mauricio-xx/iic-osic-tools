@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2025 IHP-EDA-Tools Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: counter-rtl2gds
+version: "1.0.0"
+description: "Complete RTL-to-GDS flow for a simple 32-bit counter using LibreLane"
+
+category: gold-reference
+type: rtl2gds
+
+author:
+  name: "IHP-EDA-Tools Contributors"
+  email: "pdk-support@ihp-microelectronics.com"
+created: "2025-01-03"
+updated: "2025-01-03"
+
+requirements:
+  pdk:
+    name: ihp-sg13g2
+    standard_cells: sg13g2_stdcell
+  container:
+    min_version: "2025.01"
+  tools:
+    - librelane
+    - yosys
+    - openroad
+
+execution:
+  script: run.sh
+  timeout: 600
+  parallel: false
+
+inputs:
+  - path: inputs/counter.v
+    type: verilog
+    description: "32-bit counter RTL (Verilog)"
+  - path: inputs/counter.json
+    type: librelane-config
+    description: "LibreLane flow configuration"
+  - path: inputs/impl.sdc
+    type: sdc
+    description: "Implementation timing constraints"
+  - path: inputs/signoff.sdc
+    type: sdc
+    description: "Signoff timing constraints"
+  - path: inputs/pin_order.cfg
+    type: pin-config
+    description: "IO pin placement configuration"
+
+expected_outputs:
+  - path: expected/counter.gds
+    type: gds
+    description: "Final GDSII layout"
+    comparison:
+      method: exists
+  - path: expected/counter.lef
+    type: lef
+    description: "Library Exchange Format"
+    comparison:
+      method: exists
+
+tags:
+  - counter
+  - rtl2gds
+  - librelane
+  - digital
+  - beginner
+  - synthesis
+  - pnr
+
+related:
+  - nmos-iv-curve

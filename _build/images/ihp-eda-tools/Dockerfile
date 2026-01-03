@@ -147,6 +147,9 @@ RUN bash /headless/scripts/install_eda.sh && \
     chmod -R 755 /foss/examples && \
     find /foss/examples -type f -not -name "*.sh" -exec chmod 644 {} \; && \
     chmod -R 755 /foss/tools/sak && \
+    chmod -R 755 /foss/testcases && \
+    find /foss/testcases -type f -name "*.sh" -exec chmod 755 {} \; && \
+    find /foss/testcases -type f -name "*.py" -exec chmod 755 {} \; && \
     sed -i 's/__YOSYS_NAMESPACE_RTLIL_Design__std_vector_string_//' /usr/local/lib/python3.12/dist-packages/librelane/scripts/pyosys/ys_common.py
 #FIXME Above line to be removed when LibreLane is fixed (dependency issue with newer pyosys versions)
 

@@ -1,0 +1,32 @@
+* NMOS IV Characterization Testbench
+* IHP SG13G2 Low-Voltage NMOS Transistor
+*
+* SPDX-FileCopyrightText: 2025 IHP-EDA-Tools Contributors
+* SPDX-License-Identifier: Apache-2.0
+*
+* This testbench sweeps Vds from 0 to 1.2V and Vgs from 0.3 to 0.5V
+* to generate the DC IV curves for a standard LV NMOS device.
+
+* Voltage sources
+Vgs gate GND 0.75
+Vds drain_src GND 1.5
+Vd drain_src drain 0
+.save i(vd)
+
+* Device under test: sg13_lv_nmos W=1.0um L=0.13um
+XM1 drain gate GND GND sg13_lv_nmos w=1.0u l=0.13u ng=1 m=1
+
+* Model library
+.lib cornerMOSlv.lib mos_tt
+.param temp=27
+
+* Simulation control
+.control
+save all
+op
+dc Vds 0 1.2 0.01 Vgs 0.3 0.5 0.05
+write $OUTPUT_DIR/nmos_iv.raw
+.endc
+
+.GLOBAL GND
+.end

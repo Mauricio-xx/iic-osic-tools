@@ -39,10 +39,15 @@ ihp-eda-tools/
 │   ├── docker-bake.hcl        # Docker Bake configuration
 │   ├── tool_metadata.yml      # Tool versions (commits/tags)
 │   └── build-*.sh             # Build scripts
+├── _templates/                # GitHub template repositories
+│   └── ihp-eda-testcase/      # Testcase template for contributions
 ├── _tests/                    # Regression test suite (7 tests)
 │   ├── 01-07/                 # IHP-focused tests only
 │   ├── TESTS.md               # Test descriptions
 │   └── run_docker_tests.sh    # Test runner script
+├── docs/                      # Documentation
+│   ├── TESTCASE-GUIDE.md      # Testcase user guide
+│   └── TESTCASE-CONTRIBUTING.md # Contribution guide
 ├── pdk-dev/                   # PDK development tools
 │   ├── validate-drc.sh        # DRC rule validation
 │   ├── validate-lvs.sh        # LVS setup validation
@@ -50,6 +55,10 @@ ihp-eda-tools/
 │   ├── test-simulation.sh     # Simulation test suite
 │   ├── check-symbols.sh       # xschem symbol validation
 │   └── templates/             # Templates for new tool integration
+├── testcases/                 # Testcase infrastructure
+│   ├── manifest.yaml          # Master index of testcases
+│   ├── gold-reference/        # Official example testcases
+│   └── validation/            # PDK validation testcases
 ├── start_*.sh                 # Container start scripts
 ├── start_pdk_dev.sh           # PDK development mode launcher
 ├── PLAN_IHP_CONTAINER.md      # Implementation plan document
@@ -159,6 +168,62 @@ This allows:
 - Immediately testing changes in container
 - Running validation scripts
 - Sharing test cases between designers and PDK developers
+
+## Testcase Infrastructure
+
+The container includes a standardized testcase system for sharing reproducible design examples.
+
+### Testcase Locations
+
+| Path | Description |
+|------|-------------|
+| `/foss/testcases/` | Pre-installed gold-references and validation tests |
+| `/foss/designs/testcases/` | User-created testcases (in mounted volume) |
+
+### Using Testcases
+
+```bash
+# List available testcases
+iic-testcase list
+
+# Get testcase information
+iic-testcase info gold-reference/analog/nmos-iv-curve
+
+# Run a testcase
+iic-testcase run gold-reference/analog/nmos-iv-curve
+
+# Validate testcase outputs
+iic-testcase validate gold-reference/analog/nmos-iv-curve
+
+# Create new testcase from template
+iic-testcase init my-amplifier --template analog-simulation
+```
+
+### Available Gold-References
+
+| Testcase | Type | Description |
+|----------|------|-------------|
+| `gold-reference/analog/nmos-iv-curve` | simulation | NMOS DC IV characterization |
+| `gold-reference/digital/counter-rtl2gds` | rtl2gds | Counter RTL-to-GDS with LibreLane |
+| `validation/drc/klayout-invocation` | drc | KLayout DRC environment check |
+| `validation/lvs/netgen-invocation` | lvs | Netgen LVS environment check |
+
+### Testcase Structure
+
+```
+my-testcase/
+├── testcase.yaml      # Metadata and validation rules
+├── run.sh             # Execution script
+├── inputs/            # Input files
+├── expected/          # Expected outputs
+└── README.md          # Documentation
+```
+
+### Documentation
+
+- `docs/TESTCASE-GUIDE.md` - User guide for testcase CLI
+- `docs/TESTCASE-CONTRIBUTING.md` - How to contribute testcases
+- `_templates/ihp-eda-testcase/` - GitHub template repository
 
 ## Testing
 
