@@ -25,6 +25,9 @@
 - name: gtkwave
   repo: https://github.com/gtkwave/gtkwave.git
   commit: a6aae772f36f909a0f5931aad24d8af49fba8f13
+- name: ihp-gmid-kit
+  repo: https://github.com/Mauricio-xx/ihp-gmid-kit.git
+  commit: "master"
 - name: irsim
   repo: https://github.com/rtimothyedwards/irsim.git
   commit: 037a1b97086ef8425bdd9379e38f6aada4f327e7

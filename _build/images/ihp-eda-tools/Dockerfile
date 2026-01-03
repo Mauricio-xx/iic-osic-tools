@@ -12,6 +12,7 @@ ARG TOOL_IMAGE_GAW3_XSCHEM="ghcr.io/mauricio-xx/ihp-eda-tools:tool-gaw3-xschem-l
 ARG TOOL_IMAGE_GDS3D="ghcr.io/mauricio-xx/ihp-eda-tools:tool-gds3d-latest"
 ARG TOOL_IMAGE_GHDL="ghcr.io/mauricio-xx/ihp-eda-tools:tool-ghdl-latest"
 ARG TOOL_IMAGE_GTKWAVE="ghcr.io/mauricio-xx/ihp-eda-tools:tool-gtkwave-latest"
+ARG TOOL_IMAGE_IHP_GMID_KIT="ghcr.io/mauricio-xx/ihp-eda-tools:tool-ihp-gmid-kit-latest"
 ARG TOOL_IMAGE_IRSIM="ghcr.io/mauricio-xx/ihp-eda-tools:tool-irsim-latest"
 ARG TOOL_IMAGE_IVERILOG="ghcr.io/mauricio-xx/ihp-eda-tools:tool-iverilog-latest"
 ARG TOOL_IMAGE_KLAYOUT="ghcr.io/mauricio-xx/ihp-eda-tools:tool-klayout-latest"
@@ -49,6 +50,7 @@ FROM ${TOOL_IMAGE_GAW3_XSCHEM} AS gaw3-xschem
 FROM ${TOOL_IMAGE_GDS3D} AS gds3d
 FROM ${TOOL_IMAGE_GHDL} AS ghdl
 FROM ${TOOL_IMAGE_GTKWAVE} AS gtkwave
+FROM ${TOOL_IMAGE_IHP_GMID_KIT} AS ihp-gmid-kit
 FROM ${TOOL_IMAGE_IRSIM} AS irsim
 FROM ${TOOL_IMAGE_IVERILOG} AS iverilog
 FROM ${TOOL_IMAGE_KLAYOUT} AS klayout
@@ -95,6 +97,7 @@ COPY --link --from=gds3d                        ${TOOLS}/gds3d                  
 COPY --link --from=gds3d                        ${PDK_ROOT}/                    ${PDK_ROOT}/
 COPY --link --from=ghdl                         ${TOOLS}/ghdl                   ${TOOLS}/ghdl/
 COPY --link --from=gtkwave                      ${TOOLS}/gtkwave                ${TOOLS}/gtkwave/
+COPY --link --from=ihp-gmid-kit                 ${TOOLS}/ihp-gmid-kit           ${TOOLS}/ihp-gmid-kit/
 COPY --link --from=irsim                        ${TOOLS}/irsim                  ${TOOLS}/irsim/
 COPY --link --from=iverilog                     ${TOOLS}/iverilog               ${TOOLS}/iverilog/
 COPY --link --from=klayout                      ${TOOLS}/klayout                ${TOOLS}/klayout/
@@ -128,7 +131,7 @@ COPY --link --from=slang-yosys-plugin           ${TOOLS}_add/yosys/             
 COPY tool_metadata.yml /
 
 # Copy EDA skeleton into image
-COPY images/iic-osic-tools/skel /
+COPY images/ihp-eda-tools/skel /
 
 # Install EDA packages from Python, NPM, and GEM; install examples; install KLayout add-ons
 RUN bash /headless/scripts/install_eda.sh && \

@@ -104,6 +104,13 @@ target "gtkwave" {
   cache-from = ["type=registry,ref=ghcr.io/mauricio-xx/ihp-eda-tools:tool-gtkwave-latest"]
 }
 
+target "ihp-gmid-kit" {
+  inherits = ["base-tool"]
+  dockerfile = "images/ihp-gmid-kit/Dockerfile"
+  tags = ["ghcr.io/mauricio-xx/ihp-eda-tools:tool-ihp-gmid-kit-latest"]
+  cache-from = ["type=registry,ref=ghcr.io/mauricio-xx/ihp-eda-tools:tool-ihp-gmid-kit-latest"]
+}
+
 target "irsim" {
   inherits = ["base-tool"]
   dockerfile = "images/irsim/Dockerfile"
