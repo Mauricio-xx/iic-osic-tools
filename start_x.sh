@@ -40,7 +40,7 @@ if [ -n "${DRY_RUN}" ]; then
 fi
 
 if [ -z ${CONTAINER_NAME+z} ]; then
-	CONTAINER_NAME="iic-osic-tools_xserver_uid_"$(id -u)
+	CONTAINER_NAME="ihp-eda-tools_xserver_uid_"$(id -u)
 fi
 
 # Check if the container exists and if it is running.
@@ -75,7 +75,7 @@ if [ -z ${DOCKER_USER+z} ]; then
 fi
 
 if [ -z ${DOCKER_IMAGE+z} ]; then
-	DOCKER_IMAGE="iic-osic-tools"
+	DOCKER_IMAGE="ihp-eda-tools"
 fi
 
 if [ -z ${DOCKER_TAG+z} ]; then

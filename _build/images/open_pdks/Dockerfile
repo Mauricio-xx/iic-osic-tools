@@ -1,9 +1,9 @@
 #######################################################################
 # Create open_pdks
 #######################################################################
-ARG TOOL_IMAGE_OSIC_MULTITOOL="registry.iic.jku.at:5000/iic-osic-tools:tool-osic-multitool-latest"
-ARG TOOL_IMAGE_OPENVAF="registry.iic.jku.at:5000/iic-osic-tools:tool-openvaf-latest"
-ARG TOOL_IMAGE_XYCE="registry.iic.jku.at:5000/iic-osic-tools:tool-xyce-latest"
+ARG TOOL_IMAGE_OSIC_MULTITOOL="ghcr.io/mauricio-xx/ihp-eda-tools:tool-osic-multitool-latest"
+ARG TOOL_IMAGE_OPENVAF="ghcr.io/mauricio-xx/ihp-eda-tools:tool-openvaf-latest"
+ARG TOOL_IMAGE_XYCE="ghcr.io/mauricio-xx/ihp-eda-tools:tool-xyce-latest"
 
 FROM ${TOOL_IMAGE_OPENVAF} AS openvaf
 FROM ${TOOL_IMAGE_XYCE} AS xyce

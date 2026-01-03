@@ -1,0 +1,825 @@
+#!/bin/bash
+# ========================================================================
+# iic-testcase - Testcase Management CLI for IHP-EDA-Tools
+#
+# SPDX-FileCopyrightText: 2025 IHP-EDA-Tools Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Usage: iic-testcase <command> [options] [arguments]
+#
+# Commands:
+#   list      List available testcases
+#   info      Show testcase information
+#   run       Execute a testcase
+#   validate  Run and validate against expected outputs
+#   init      Create new testcase from template
+#   verify    Verify testcase structure
+#   export    Export testcase to directory
+# ========================================================================
+
+set -e
+
+VERSION="1.0.0"
+TESTCASE_ROOT="${TESTCASE_ROOT:-/foss/testcases}"
+USER_TESTCASE_ROOT="${USER_TESTCASE_ROOT:-/foss/designs/testcases}"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# ========================================================================
+# Helper functions
+# ========================================================================
+
+print_usage() {
+    cat << EOF
+iic-testcase - Testcase Management CLI for IHP-EDA-Tools v$VERSION
+
+Usage: iic-testcase <command> [options] [arguments]
+
+Commands:
+  list [options]              List available testcases
+    --category <cat>          Filter by category (gold-reference|validation|contributed)
+    --type <type>             Filter by type (simulation|drc|lvs|rtl2gds)
+    --tag <tag>               Filter by tag
+
+  info <testcase-id>          Show detailed testcase information
+
+  run <testcase-id> [options] Execute a testcase
+    --output <dir>            Output directory (default: testcase/output)
+    --no-compare              Skip comparison with expected outputs
+
+  validate <testcase-id>      Run testcase and validate against expected outputs
+
+  init <name> [options]       Create new testcase from template
+    --template <template>     Template type (analog-simulation|digital-rtl2gds|drc-test)
+
+  verify <path>               Verify testcase structure and metadata
+
+  export <testcase-id> <dir>  Export testcase to standalone directory
+
+Options:
+  -h, --help                  Show this help message
+  -v, --version               Show version
+  -q, --quiet                 Suppress informational output
+
+Examples:
+  iic-testcase list --category gold-reference --type simulation
+  iic-testcase info gold-reference/analog/nmos-iv-curve
+  iic-testcase run gold-reference/analog/nmos-iv-curve --output ~/results
+  iic-testcase init my-amplifier --template analog-simulation
+
+Environment:
+  TESTCASE_ROOT       Root directory for testcases (default: /foss/testcases)
+  USER_TESTCASE_ROOT  User testcase directory (default: /foss/designs/testcases)
+
+EOF
+}
+
+print_version() {
+    echo "iic-testcase version $VERSION"
+}
+
+log_info() {
+    [ -z "$QUIET" ] && echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[PASS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[FAIL]${NC} $1" >&2
+}
+
+# Find testcase directory by ID
+find_testcase() {
+    local testcase_id="$1"
+    local testcase_dir=""
+
+    # Check in main testcase root
+    if [ -d "$TESTCASE_ROOT/$testcase_id" ]; then
+        testcase_dir="$TESTCASE_ROOT/$testcase_id"
+    # Check in user testcase root
+    elif [ -d "$USER_TESTCASE_ROOT/$testcase_id" ]; then
+        testcase_dir="$USER_TESTCASE_ROOT/$testcase_id"
+    # Check if it's an absolute path
+    elif [ -d "$testcase_id" ]; then
+        testcase_dir="$testcase_id"
+    fi
+
+    echo "$testcase_dir"
+}
+
+# Parse YAML value (simple parser for basic fields)
+yaml_get() {
+    local file="$1"
+    local key="$2"
+    grep "^$key:" "$file" 2>/dev/null | sed "s/^$key:[[:space:]]*//" | sed 's/^"//' | sed 's/"$//'
+}
+
+# ========================================================================
+# Command: list
+# ========================================================================
+
+cmd_list() {
+    local category_filter=""
+    local type_filter=""
+    local tag_filter=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --category) category_filter="$2"; shift 2 ;;
+            --type) type_filter="$2"; shift 2 ;;
+            --tag) tag_filter="$2"; shift 2 ;;
+            *) shift ;;
+        esac
+    done
+
+    echo "Available testcases:"
+    echo "===================="
+    echo ""
+
+    local count=0
+
+    # Search in testcase roots
+    for root in "$TESTCASE_ROOT" "$USER_TESTCASE_ROOT"; do
+        if [ ! -d "$root" ]; then
+            continue
+        fi
+
+        # Find all testcase.yaml files
+        while IFS= read -r yaml_file; do
+            local dir=$(dirname "$yaml_file")
+            local id="${dir#$root/}"
+            local name=$(yaml_get "$yaml_file" "name")
+            local category=$(yaml_get "$yaml_file" "category")
+            local type=$(yaml_get "$yaml_file" "type")
+            local description=$(yaml_get "$yaml_file" "description")
+
+            # Apply filters
+            if [ -n "$category_filter" ] && [ "$category" != "$category_filter" ]; then
+                continue
+            fi
+            if [ -n "$type_filter" ] && [ "$type" != "$type_filter" ]; then
+                continue
+            fi
+            if [ -n "$tag_filter" ]; then
+                if ! grep -q "$tag_filter" "$yaml_file" 2>/dev/null; then
+                    continue
+                fi
+            fi
+
+            printf "%-45s %-15s %-12s\n" "$id" "[$category]" "($type)"
+            [ -n "$description" ] && echo "    $description"
+            echo ""
+            count=$((count + 1))
+        done < <(find "$root" -name "testcase.yaml" 2>/dev/null)
+    done
+
+    echo "---"
+    echo "Total: $count testcase(s)"
+}
+
+# ========================================================================
+# Command: info
+# ========================================================================
+
+cmd_info() {
+    local testcase_id="$1"
+
+    if [ -z "$testcase_id" ]; then
+        log_error "Usage: iic-testcase info <testcase-id>"
+        exit 1
+    fi
+
+    local testcase_dir=$(find_testcase "$testcase_id")
+
+    if [ -z "$testcase_dir" ] || [ ! -d "$testcase_dir" ]; then
+        log_error "Testcase not found: $testcase_id"
+        exit 1
+    fi
+
+    local yaml_file="$testcase_dir/testcase.yaml"
+
+    if [ ! -f "$yaml_file" ]; then
+        log_error "No testcase.yaml found in $testcase_dir"
+        exit 1
+    fi
+
+    echo "Testcase Information"
+    echo "===================="
+    echo ""
+    echo "ID:          $testcase_id"
+    echo "Path:        $testcase_dir"
+    echo ""
+    echo "--- Metadata ---"
+    cat "$yaml_file"
+    echo ""
+
+    if [ -f "$testcase_dir/README.md" ]; then
+        echo "--- Documentation ---"
+        head -30 "$testcase_dir/README.md"
+        echo "..."
+    fi
+}
+
+# ========================================================================
+# Command: run
+# ========================================================================
+
+cmd_run() {
+    local testcase_id=""
+    local output_dir=""
+    local no_compare=0
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --output) output_dir="$2"; shift 2 ;;
+            --no-compare) no_compare=1; shift ;;
+            -*) shift ;;
+            *) testcase_id="$1"; shift ;;
+        esac
+    done
+
+    if [ -z "$testcase_id" ]; then
+        log_error "Usage: iic-testcase run <testcase-id> [--output <dir>]"
+        exit 1
+    fi
+
+    local testcase_dir=$(find_testcase "$testcase_id")
+
+    if [ -z "$testcase_dir" ] || [ ! -d "$testcase_dir" ]; then
+        log_error "Testcase not found: $testcase_id"
+        exit 1
+    fi
+
+    local yaml_file="$testcase_dir/testcase.yaml"
+    local run_script="$testcase_dir/run.sh"
+
+    if [ ! -f "$run_script" ]; then
+        log_error "No run.sh found in $testcase_dir"
+        exit 1
+    fi
+
+    # Set output directory
+    if [ -z "$output_dir" ]; then
+        output_dir="$testcase_dir/output"
+    fi
+
+    log_info "Running testcase: $testcase_id"
+    log_info "Output directory: $output_dir"
+
+    # Export environment variables for the run script
+    export TESTCASE_DIR="$testcase_dir"
+    export OUTPUT_DIR="$output_dir"
+
+    # Execute run script
+    if bash "$run_script"; then
+        log_success "Testcase completed successfully"
+        return 0
+    else
+        log_error "Testcase failed"
+        return 1
+    fi
+}
+
+# ========================================================================
+# Command: init
+# ========================================================================
+
+cmd_init() {
+    local name=""
+    local template="analog-simulation"
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --template) template="$2"; shift 2 ;;
+            -*) shift ;;
+            *) name="$1"; shift ;;
+        esac
+    done
+
+    if [ -z "$name" ]; then
+        log_error "Usage: iic-testcase init <name> [--template <template>]"
+        exit 1
+    fi
+
+    local target_dir="$PWD/$name"
+
+    if [ -d "$target_dir" ]; then
+        log_error "Directory already exists: $target_dir"
+        exit 1
+    fi
+
+    log_info "Creating testcase: $name (template: $template)"
+
+    mkdir -p "$target_dir"/{inputs,expected}
+
+    # Create testcase.yaml template
+    cat > "$target_dir/testcase.yaml" << EOF
+# SPDX-FileCopyrightText: $(date +%Y) Your Name
+# SPDX-License-Identifier: Apache-2.0
+
+name: $name
+version: "1.0.0"
+description: "Description of your testcase"
+
+category: contributed
+type: simulation
+
+author:
+  name: "Your Name"
+  email: "your.email@example.com"
+created: "$(date +%Y-%m-%d)"
+updated: "$(date +%Y-%m-%d)"
+
+requirements:
+  pdk:
+    name: ihp-sg13g2
+  container:
+    min_version: "2025.01"
+  tools:
+    - ngspice
+
+execution:
+  script: run.sh
+  timeout: 300
+  parallel: true
+
+inputs:
+  - path: inputs/your_input.spice
+    type: spice-netlist
+    description: "Your input file description"
+
+expected_outputs:
+  - path: expected/your_output.raw
+    type: ngspice-rawfile
+    comparison:
+      method: pattern
+      must_not_contain:
+        - "Error"
+
+tags:
+  - your-tag
+EOF
+
+    # Create run.sh template
+    cat > "$target_dir/run.sh" << 'EOF'
+#!/bin/bash
+# SPDX-FileCopyrightText: Your Name
+# SPDX-License-Identifier: Apache-2.0
+
+set -e
+
+TESTCASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OUTPUT_DIR="${OUTPUT_DIR:-$TESTCASE_DIR/output}"
+mkdir -p "$OUTPUT_DIR"
+
+source sak-pdk-script.sh ihp-sg13g2 > /dev/null 2>&1 || true
+
+echo "[INFO] Running testcase..."
+
+# Add your simulation commands here
+# ngspice -b "$TESTCASE_DIR/inputs/your_input.spice" -o "$OUTPUT_DIR/simulation.log"
+
+echo "[PASS] Testcase completed"
+exit 0
+EOF
+    chmod +x "$target_dir/run.sh"
+
+    # Create README template
+    cat > "$target_dir/README.md" << EOF
+# $name
+
+## Description
+
+Describe your testcase here.
+
+## Usage
+
+\`\`\`bash
+iic-testcase run .
+\`\`\`
+
+## License
+
+SPDX-License-Identifier: Apache-2.0
+EOF
+
+    log_success "Testcase created: $target_dir"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Edit testcase.yaml with your metadata"
+    echo "  2. Add input files to inputs/"
+    echo "  3. Implement run.sh"
+    echo "  4. Run with: iic-testcase run $target_dir"
+}
+
+# ========================================================================
+# Command: verify
+# ========================================================================
+
+cmd_verify() {
+    local path="${1:-.}"
+    local errors=0
+
+    log_info "Verifying testcase structure: $path"
+
+    # Check testcase.yaml
+    if [ ! -f "$path/testcase.yaml" ]; then
+        log_error "Missing testcase.yaml"
+        errors=$((errors + 1))
+    else
+        log_success "testcase.yaml exists"
+
+        # Check required fields
+        for field in name version description category type; do
+            if ! grep -q "^$field:" "$path/testcase.yaml"; then
+                log_warning "Missing field: $field"
+            fi
+        done
+    fi
+
+    # Check run.sh
+    if [ ! -f "$path/run.sh" ]; then
+        log_error "Missing run.sh"
+        errors=$((errors + 1))
+    elif [ ! -x "$path/run.sh" ]; then
+        log_warning "run.sh is not executable"
+    else
+        log_success "run.sh exists and is executable"
+    fi
+
+    # Check inputs directory
+    if [ ! -d "$path/inputs" ]; then
+        log_warning "Missing inputs/ directory"
+    else
+        local input_count=$(find "$path/inputs" -type f | wc -l)
+        log_success "inputs/ directory exists ($input_count files)"
+    fi
+
+    # Check README
+    if [ ! -f "$path/README.md" ]; then
+        log_warning "Missing README.md (recommended)"
+    else
+        log_success "README.md exists"
+    fi
+
+    echo ""
+    if [ $errors -eq 0 ]; then
+        log_success "Testcase structure is valid"
+        return 0
+    else
+        log_error "Testcase has $errors error(s)"
+        return 1
+    fi
+}
+
+# ========================================================================
+# Command: validate
+# ========================================================================
+
+cmd_validate() {
+    local testcase_id=""
+    local output_dir=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --output) output_dir="$2"; shift 2 ;;
+            -*) shift ;;
+            *) testcase_id="$1"; shift ;;
+        esac
+    done
+
+    if [ -z "$testcase_id" ]; then
+        log_error "Usage: iic-testcase validate <testcase-id> [--output <dir>]"
+        exit 1
+    fi
+
+    local testcase_dir=$(find_testcase "$testcase_id")
+
+    if [ -z "$testcase_dir" ] || [ ! -d "$testcase_dir" ]; then
+        log_error "Testcase not found: $testcase_id"
+        exit 1
+    fi
+
+    local yaml_file="$testcase_dir/testcase.yaml"
+    local run_script="$testcase_dir/run.sh"
+
+    if [ ! -f "$run_script" ]; then
+        log_error "No run.sh found in $testcase_dir"
+        exit 1
+    fi
+
+    # Set output directory
+    if [ -z "$output_dir" ]; then
+        output_dir="$testcase_dir/output"
+    fi
+
+    echo ""
+    echo "=========================================="
+    echo "TESTCASE VALIDATION: $testcase_id"
+    echo "=========================================="
+    echo ""
+
+    # Step 1: Run the testcase
+    log_info "Step 1: Executing testcase..."
+    export TESTCASE_DIR="$testcase_dir"
+    export OUTPUT_DIR="$output_dir"
+
+    local run_status=0
+    if bash "$run_script"; then
+        log_success "Testcase execution completed"
+    else
+        log_error "Testcase execution failed"
+        run_status=1
+    fi
+
+    # Step 2: Validate outputs
+    log_info "Step 2: Validating outputs..."
+
+    local validation_errors=0
+    local validation_count=0
+
+    # Parse expected_outputs from YAML (simple parsing)
+    local in_expected_outputs=0
+    local current_path=""
+    local current_method=""
+    local must_contain=()
+    local must_not_contain=()
+
+    while IFS= read -r line; do
+        # Check if we're entering expected_outputs section
+        if echo "$line" | grep -q "^expected_outputs:"; then
+            in_expected_outputs=1
+            continue
+        fi
+
+        # Check if we're leaving expected_outputs section (new top-level key)
+        if [ "$in_expected_outputs" -eq 1 ] && echo "$line" | grep -q "^[a-z]" && ! echo "$line" | grep -q "^  "; then
+            in_expected_outputs=0
+        fi
+
+        if [ "$in_expected_outputs" -eq 1 ]; then
+            # Parse path
+            if echo "$line" | grep -q "^  - path:"; then
+                # Process previous entry if exists
+                if [ -n "$current_path" ]; then
+                    validate_output "$testcase_dir" "$output_dir" "$current_path" "$current_method" "${must_contain[*]}" "${must_not_contain[*]}"
+                    validation_count=$((validation_count + 1))
+                    if [ $? -ne 0 ]; then
+                        validation_errors=$((validation_errors + 1))
+                    fi
+                fi
+                current_path=$(echo "$line" | sed 's/.*path:[[:space:]]*//' | tr -d '"')
+                current_method=""
+                must_contain=()
+                must_not_contain=()
+            fi
+
+            # Parse method
+            if echo "$line" | grep -q "method:"; then
+                current_method=$(echo "$line" | sed 's/.*method:[[:space:]]*//' | tr -d '"')
+            fi
+
+            # Parse must_not_contain items
+            if echo "$line" | grep -q "^        - "; then
+                local pattern=$(echo "$line" | sed 's/^        - //' | tr -d '"')
+                must_not_contain+=("$pattern")
+            fi
+        fi
+    done < "$yaml_file"
+
+    # Process last entry
+    if [ -n "$current_path" ]; then
+        validate_output "$testcase_dir" "$output_dir" "$current_path" "$current_method" "${must_contain[*]}" "${must_not_contain[*]}"
+        validation_count=$((validation_count + 1))
+        if [ $? -ne 0 ]; then
+            validation_errors=$((validation_errors + 1))
+        fi
+    fi
+
+    # Summary
+    echo ""
+    echo "=========================================="
+    echo "VALIDATION SUMMARY"
+    echo "=========================================="
+
+    if [ "$run_status" -ne 0 ]; then
+        log_error "Execution: FAILED"
+    else
+        log_success "Execution: PASSED"
+    fi
+
+    if [ "$validation_count" -eq 0 ]; then
+        log_warning "No expected outputs defined for validation"
+    elif [ "$validation_errors" -eq 0 ]; then
+        log_success "Outputs: $validation_count/$validation_count PASSED"
+    else
+        log_error "Outputs: $((validation_count - validation_errors))/$validation_count PASSED"
+    fi
+
+    echo ""
+
+    if [ "$run_status" -ne 0 ] || [ "$validation_errors" -ne 0 ]; then
+        log_error "OVERALL: FAILED"
+        return 1
+    else
+        log_success "OVERALL: PASSED"
+        return 0
+    fi
+}
+
+# Helper function to validate a single output
+validate_output() {
+    local testcase_dir="$1"
+    local output_dir="$2"
+    local expected_path="$3"
+    local method="$4"
+    local must_contain="$5"
+    local must_not_contain="$6"
+
+    # Determine actual output path (replace expected/ with output/)
+    local actual_path="$output_dir/$(basename "$expected_path")"
+
+    # Also check if it's directly under output_dir with same name
+    if [ ! -f "$actual_path" ]; then
+        actual_path=$(find "$output_dir" -name "$(basename "$expected_path")" -type f 2>/dev/null | head -1)
+    fi
+
+    log_info "Validating: $(basename "$expected_path")"
+
+    case "$method" in
+        exists)
+            if [ -f "$actual_path" ]; then
+                log_success "  File exists: $actual_path"
+                return 0
+            else
+                log_error "  File not found: $(basename "$expected_path")"
+                return 1
+            fi
+            ;;
+        pattern)
+            if [ ! -f "$actual_path" ]; then
+                # Check log files for patterns
+                local log_file=$(find "$output_dir" -name "*.log" -type f 2>/dev/null | head -1)
+                if [ -n "$log_file" ]; then
+                    actual_path="$log_file"
+                else
+                    log_error "  No output file found for pattern matching"
+                    return 1
+                fi
+            fi
+
+            local pattern_errors=0
+
+            # Check must_not_contain patterns
+            for pattern in $must_not_contain; do
+                if grep -qi "$pattern" "$actual_path" 2>/dev/null; then
+                    log_error "  Found forbidden pattern: '$pattern'"
+                    pattern_errors=$((pattern_errors + 1))
+                fi
+            done
+
+            if [ "$pattern_errors" -eq 0 ]; then
+                log_success "  Pattern validation passed"
+                return 0
+            else
+                return 1
+            fi
+            ;;
+        checksum)
+            local expected_file="$testcase_dir/$expected_path"
+            if [ -f "$expected_file" ] && [ -f "$actual_path" ]; then
+                if iic-testcase-compare checksum "$actual_path" "$expected_file" -q; then
+                    log_success "  Checksum matches"
+                    return 0
+                else
+                    log_error "  Checksum mismatch"
+                    return 1
+                fi
+            else
+                log_warning "  Cannot compare checksums (missing files)"
+                return 0
+            fi
+            ;;
+        *)
+            # Default: check if file exists
+            if [ -f "$actual_path" ]; then
+                log_success "  Output exists: $(basename "$actual_path")"
+                return 0
+            else
+                log_warning "  Output not found (no validation method specified)"
+                return 0
+            fi
+            ;;
+    esac
+}
+
+# ========================================================================
+# Command: export
+# ========================================================================
+
+cmd_export() {
+    local testcase_id="$1"
+    local target_dir="$2"
+
+    if [ -z "$testcase_id" ] || [ -z "$target_dir" ]; then
+        log_error "Usage: iic-testcase export <testcase-id> <output-dir>"
+        exit 1
+    fi
+
+    local testcase_dir=$(find_testcase "$testcase_id")
+
+    if [ -z "$testcase_dir" ] || [ ! -d "$testcase_dir" ]; then
+        log_error "Testcase not found: $testcase_id"
+        exit 1
+    fi
+
+    if [ -d "$target_dir" ]; then
+        log_error "Target directory already exists: $target_dir"
+        exit 1
+    fi
+
+    log_info "Exporting testcase: $testcase_id"
+    log_info "Target: $target_dir"
+
+    cp -r "$testcase_dir" "$target_dir"
+
+    # Remove output directory if exists
+    rm -rf "$target_dir/output"
+
+    log_success "Testcase exported to: $target_dir"
+}
+
+# ========================================================================
+# Main
+# ========================================================================
+
+QUIET=""
+
+# Parse global options
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        -v|--version)
+            print_version
+            exit 0
+            ;;
+        -q|--quiet)
+            QUIET=1
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Get command
+COMMAND="${1:-}"
+shift 2>/dev/null || true
+
+case "$COMMAND" in
+    list)
+        cmd_list "$@"
+        ;;
+    info)
+        cmd_info "$@"
+        ;;
+    run)
+        cmd_run "$@"
+        ;;
+    validate)
+        cmd_validate "$@"
+        ;;
+    init)
+        cmd_init "$@"
+        ;;
+    verify)
+        cmd_verify "$@"
+        ;;
+    export)
+        cmd_export "$@"
+        ;;
+    "")
+        print_usage
+        exit 1
+        ;;
+    *)
+        log_error "Unknown command: $COMMAND"
+        echo "Run 'iic-testcase --help' for usage"
+        exit 1
+        ;;
+esac

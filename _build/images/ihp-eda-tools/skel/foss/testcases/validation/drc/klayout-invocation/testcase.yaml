@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2025 IHP-EDA-Tools Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: klayout-invocation
+version: "1.0.0"
+description: "Verify KLayout DRC script exists and can be invoked for IHP SG13G2"
+
+category: validation
+type: drc
+
+author:
+  name: "IHP-EDA-Tools Contributors"
+  email: "pdk-support@ihp-microelectronics.com"
+created: "2025-01-03"
+updated: "2025-01-03"
+
+requirements:
+  pdk:
+    name: ihp-sg13g2
+  container:
+    min_version: "2025.01"
+  tools:
+    - klayout
+
+execution:
+  script: run.sh
+  timeout: 60
+  parallel: true
+
+inputs:
+  - path: inputs/check_drc.py
+    type: python
+    description: "Python script to verify DRC environment"
+
+expected_outputs:
+  - path: expected/validation.log
+    type: log
+    description: "Validation log"
+    comparison:
+      method: pattern
+      must_not_contain:
+        - "ERROR"
+        - "FAILED"
+
+tags:
+  - drc
+  - klayout
+  - validation
+  - pdk-check

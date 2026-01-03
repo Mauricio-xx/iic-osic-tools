@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2025 IHP-EDA-Tools Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: nmos-iv-curve
+version: "1.0.0"
+description: "DC IV characterization of IHP SG13G2 low-voltage NMOS transistor"
+
+category: gold-reference
+type: simulation
+
+author:
+  name: "IHP-EDA-Tools Contributors"
+  email: "pdk-support@ihp-microelectronics.com"
+created: "2025-01-03"
+updated: "2025-01-03"
+
+requirements:
+  pdk:
+    name: ihp-sg13g2
+    min_version: "dev"
+  container:
+    min_version: "2025.01"
+  tools:
+    - ngspice
+
+execution:
+  script: run.sh
+  timeout: 120
+  parallel: true
+
+inputs:
+  - path: inputs/tb_nmos.spice
+    type: spice-netlist
+    description: "NMOS DC sweep testbench (Vds 0-1.2V, Vgs 0.3-0.5V)"
+
+expected_outputs:
+  - path: expected/nmos_iv.raw
+    type: ngspice-rawfile
+    description: "DC IV curves raw data"
+    comparison:
+      method: pattern
+      must_not_contain:
+        - "Error"
+        - "FATAL"
+
+tags:
+  - nmos
+  - dc-sweep
+  - characterization
+  - beginner
+  - mosfet
+
+related:
+  - pmos-iv-curve
+  - nmos-temp-sweep

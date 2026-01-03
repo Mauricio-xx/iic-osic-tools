@@ -1,9 +1,9 @@
 #######################################################################
 # Compile Yosys GHDL plugin
 #######################################################################
-ARG BASE_IMAGE_BUILD="registry.iic.jku.at:5000/iic-osic-tools:base-dev"
-ARG TOOL_IMAGE_YOSYS="registry.iic.jku.at:5000/iic-osic-tools:tool-yosys-latest"
-ARG TOOL_IMAGE_GHDL="registry.iic.jku.at:5000/iic-osic-tools:tool-ghdl-latest"
+ARG BASE_IMAGE_BUILD="ghcr.io/mauricio-xx/ihp-eda-tools:base-dev"
+ARG TOOL_IMAGE_YOSYS="ghcr.io/mauricio-xx/ihp-eda-tools:tool-yosys-latest"
+ARG TOOL_IMAGE_GHDL="ghcr.io/mauricio-xx/ihp-eda-tools:tool-ghdl-latest"
 FROM ${TOOL_IMAGE_YOSYS} AS yosys
 FROM ${TOOL_IMAGE_GHDL} AS ghdl
 FROM ${BASE_IMAGE_BUILD} AS ghdl-yosys-plugin

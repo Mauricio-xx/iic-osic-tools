@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: [YEAR] [YOUR NAME]
+# SPDX-License-Identifier: Apache-2.0
+#
+# IHP-EDA-Tools Testcase Configuration
+# Documentation: https://github.com/iic-jku/iic-osic-tools/docs/TESTCASE-GUIDE.md
+
+name: my-testcase
+version: "1.0.0"
+description: "Brief description of what this testcase demonstrates"
+
+# Category: gold-reference (official), validation (pdk tests), contributed (community)
+category: contributed
+
+# Type: simulation, drc, lvs, pex, rtl2gds, rf
+type: simulation
+
+author:
+  name: "Your Name"
+  email: "your.email@example.com"
+  github: "your-github-username"
+
+created: "2025-01-01"
+updated: "2025-01-01"
+
+# Requirements for running this testcase
+requirements:
+  pdk:
+    name: ihp-sg13g2
+    min_version: "dev"
+  container:
+    min_version: "2025.01"
+  tools:
+    - ngspice
+    # Add other required tools: xyce, klayout, magic, librelane, etc.
+
+# Execution configuration
+execution:
+  script: run.sh
+  timeout: 300  # seconds
+  parallel: true  # Can run in parallel with other testcases
+
+# Input files
+inputs:
+  - path: inputs/netlist.spice
+    type: spice-netlist
+    description: "Main simulation netlist"
+  # Add more inputs as needed:
+  # - path: inputs/layout.gds
+  #   type: gds
+  #   description: "Layout for DRC/LVS"
+
+# Expected outputs and validation
+expected_outputs:
+  - path: expected/output.raw
+    type: ngspice-rawfile
+    description: "Simulation results"
+    comparison:
+      method: pattern  # exists, checksum, pattern, numerical
+      must_not_contain:
+        - "Error"
+        - "FATAL"
+      # For numerical comparison:
+      # method: numerical
+      # tolerance: 0.01
+
+# Tags for discovery (searchable via iic-testcase list --tag)
+tags:
+  - example
+  - simulation
+  # Add relevant tags: nmos, pmos, amplifier, oscillator, drc, lvs, etc.
+
+# Related testcases (optional)
+related:
+  - gold-reference/analog/nmos-iv-curve

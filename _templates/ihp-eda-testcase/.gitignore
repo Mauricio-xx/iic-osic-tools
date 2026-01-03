@@ -1,0 +1,45 @@
+# Output directory
+output/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*~
+
+# ngspice outputs
+*.raw
+*.log
+*.lis
+
+# KLayout outputs
+*.lyrdb
+*.lydrc.log
+
+# Magic outputs
+*.ext
+*.sim
+*.nodes
+*.res
+*.cap
+
+# Netgen outputs
+*.lvs.out
+*.lvs.log
+
+# LibreLane/OpenROAD outputs
+runs/
+results/
+logs/
+reports/
+objects/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo

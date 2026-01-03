@@ -57,6 +57,8 @@ if [ -z ${FOSS_INIT_DONE+x} ]; then
     _path_add_tool_python "ngspyce"
     _path_add_tool_python "openems"
     _path_add_tool_python "pyopus"
+    # IHP gm/ID Design Kit
+    export PYTHONPATH=$PYTHONPATH:$TOOLS/ihp-gmid-kit/src:$TOOLS/ihp-gmid-kit/vendor
     export PYTHONPATH=$PYTHONPATH:$TOOLS/yosys/share/yosys/python3
     KLAYOUT_PYTHON=("$TOOLS"/klayout/pymod)
     export PYTHONPATH=$PYTHONPATH:${KLAYOUT_PYTHON[*]}

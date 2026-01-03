@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2025 IHP-EDA-Tools Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# GitHub Actions workflow to test IHP-EDA-Tools testcase
+# This workflow runs the testcase inside the official container
+
+name: Test Testcase
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  CONTAINER_IMAGE: ghcr.io/iic-jku/iic-osic-tools:latest
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify testcase structure
+        run: |
+          echo "Checking testcase structure..."
+          test -f testcase.yaml || { echo "Missing testcase.yaml"; exit 1; }
+          test -f run.sh || { echo "Missing run.sh"; exit 1; }
+          test -x run.sh || chmod +x run.sh
+          test -d inputs || { echo "Missing inputs/ directory"; exit 1; }
+          echo "Testcase structure OK"
+
+      - name: Pull IHP-EDA-Tools container
+        run: docker pull ${{ env.CONTAINER_IMAGE }}
+
+      - name: Run testcase
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/testcase:ro" \
+            -v "${{ github.workspace }}/output:/output" \
+            -e OUTPUT_DIR=/output \
+            -e TESTCASE_DIR=/testcase \
+            ${{ env.CONTAINER_IMAGE }} \
+            bash -c "cd /testcase && ./run.sh"
+
+      - name: Check results
+        run: |
+          echo "=== Testcase Output ==="
+          ls -la output/ 2>/dev/null || echo "No output directory"
+
+          # Check for error indicators in logs
+          if [ -d output ]; then
+            for log in output/*.log; do
+              if [ -f "$log" ]; then
+                echo "=== $log ==="
+                tail -50 "$log"
+                if grep -qi "error\|fatal\|fail" "$log"; then
+                  echo "WARNING: Potential errors found in $log"
+                fi
+              fi
+            done
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: testcase-output
+          path: output/
+          retention-days: 7
+
+  validate:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run validation with iic-testcase
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/testcase:ro" \
+            -v "${{ github.workspace }}/output:/output" \
+            ${{ env.CONTAINER_IMAGE }} \
+            bash -c "iic-testcase validate /testcase --output /output"

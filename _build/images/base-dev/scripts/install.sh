@@ -49,6 +49,7 @@ apt -y install \
 	liblzma-dev \
 	libmng-dev \
 	libmpc-dev \
+	maven \
 	libmpfr-dev \
 	libncurses-dev \
 	libomp-dev \

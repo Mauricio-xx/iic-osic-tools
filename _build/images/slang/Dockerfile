@@ -1,7 +1,7 @@
 #######################################################################
 # Compile slang
 #######################################################################
-ARG BASE_IMAGE_BUILD=registry.iic.jku.at:5000/iic-osic-tools:base-dev
+ARG BASE_IMAGE_BUILD=ghcr.io/mauricio-xx/ihp-eda-tools:base-dev
 FROM ${BASE_IMAGE_BUILD} AS slang
 ARG SLANG_REPO_URL="https://github.com/MikePopoloski/slang.git"
 ARG SLANG_REPO_COMMIT="ac4775484d4b3c5ba2650c95b71ddf1a4f342dea"

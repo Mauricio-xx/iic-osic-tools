@@ -1,8 +1,8 @@
 #######################################################################
 # Compile Slang Yosys plugin
 #######################################################################
-ARG BASE_IMAGE_BUILD="registry.iic.jku.at:5000/iic-osic-tools:base-dev"
-ARG TOOL_IMAGE_YOSYS="registry.iic.jku.at:5000/iic-osic-tools:tool-yosys-latest"
+ARG BASE_IMAGE_BUILD="ghcr.io/mauricio-xx/ihp-eda-tools:base-dev"
+ARG TOOL_IMAGE_YOSYS="ghcr.io/mauricio-xx/ihp-eda-tools:tool-yosys-latest"
 
 FROM ${TOOL_IMAGE_YOSYS} AS yosys
 FROM ${BASE_IMAGE_BUILD} AS slang-yosys-plugin
